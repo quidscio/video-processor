@@ -48,19 +48,21 @@ I want you to suggest a way to structure and accomplish the requirements goals.
 If you see better approaches than suggested, check with me before proceeding.
 
 Program progress should look something like:  
-```bash
+```text
 == Video Processor 2025-07-04 ==
-.. Downloading youtube SRT [URL] 
+.. Downloading youtube SRT [URL] and command line options used 
 __ DBG [command being used or other debug statement]
 .. Received [filename]
 ** Error: Errors start with "**" 
 ```
 
-Prefix defintions are as follows 
-* == denotes program start 
-* .. Normal status 
-* __ Debug statements 
-* ** Errors start with "**" 
+Prefix definitions are as follows 
+```text 
+== denotes program start 
+.. Normal status 
+__ Debug statements citing external command strings and key decisions 
+** Errors start with "**" 
+```
 
 The program must have a -d --debug flag to enable debug output. 
 Debug output should include external commands used and important decisions made and why. 
