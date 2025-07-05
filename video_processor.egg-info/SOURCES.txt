@@ -1,0 +1,16 @@
+README.md
+pyproject.toml
+video_processor/__init__.py
+video_processor/cli.py
+video_processor/config.py
+video_processor/converter.py
+video_processor/downloader.py
+video_processor/llm_client.py
+video_processor/srt_parser.py
+video_processor.egg-info/PKG-INFO
+video_processor.egg-info/SOURCES.txt
+video_processor.egg-info/dependency_links.txt
+video_processor.egg-info/entry_points.txt
+video_processor.egg-info/requires.txt
+video_processor.egg-info/top_level.txt
+video_processor/prompts/transcribe.tpl

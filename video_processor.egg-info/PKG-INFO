@@ -1,0 +1,44 @@
+Metadata-Version: 2.4
+Name: video-processor
+Version: 0.1.0
+Summary: CLI to transcribe and summarize video/audio using Whisper and Claude Opus 4
+Author-email: you@example.com
+License: MIT
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: openai-whisper>=20230314
+Requires-Dist: srt>=3.5.0
+Requires-Dist: click>=8.0
+Requires-Dist: requests>=2.25.0
+
+# video-processor
+
+Command-line tool to transcribe and summarize video or audio files using Whisper and Claude Opus 4.
+
+See `readme_rmh.md` for full specifications and design.
+
+## Installation
+
+```bash
+# Recommended: use a virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+pip install .
+```
+
+## Usage
+
+```bash
+# Transcribe a local media file:
+video-processor my_video.mp4
+
+# Download captions from YouTube and process:
+video-processor --youtube https://youtu.be/VIDEO_ID
+
+# See full option list:
+video-processor --help
+
+# Development mode (run directly from source, no install):
+python3 -m video_processor.cli --help
+```

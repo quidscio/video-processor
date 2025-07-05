@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "video-processor"
+version = "0.1.0"
+description = "CLI to transcribe and summarize video/audio using Whisper and Claude Opus 4"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [ { name = "", email = "you@example.com" } ]
+dependencies = [
+    "openai-whisper>=20230314",
+    "srt>=3.5.0",
+    "click>=8.0",
+    "requests>=2.25.0",
+    "anthropic>=3.0.0",
+]
+
+[project.scripts]
+video-processor = "video_processor.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["video_processor*"]
+
+[tool.setuptools.package-data]
+"video_processor.prompts" = ["*.tpl"]
