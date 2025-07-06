@@ -65,9 +65,37 @@ __ Debug statements citing external command strings and key decisions
 ```
 
 The program must have a -d --debug flag to enable debug output. 
-Debug output should include external commands used and important decisions made and why. 
+Debug output should include:
+* External commands used exactly as used without unevaluated parms
+* Important decisions made and why
+* Save of working files using timestamp prefix, yyyymmdd_hhmmss_filename 
 
 # Chronology 
 
-07.03.25 Requirements 
+07.03.25 Requirements  
+07.06.25 V1 YT URL works. Improvements required  
+    TODO: Eliminate environment setting dependencies; anthropic backend, any others  
+    TODO: Clarify approach to enable WSL to windows host fo ollama server config  
+    TODO: Add -o --output to file option. Name should be video title w/o spaces per filerenamer approach  
 
+#### Setup items 
+We want to make this configurable (video-processor.cfg) or via .env or via command line option 
+* WSL 
+    * export LLM_BACKEND=anthropic
+    * export ANTHROPIC_API_KEY=sk...
+    * set OLLAMA_URL=http://192.168.1.68:11434
+    * export OLLAMA_URL=192.168.1.68
+* Powershell 
+    * Set-NetFirewallRule -DisplayName "Allow Ollama on port 11434" -EdgeTraversalPolicy Allow
+
+We need to cleanup configuration. Some set of the following were needed to get a WSL instance running on a Windows host where Ollama runs under Windows. Explain each item and whether it is needed for this command: 
+* video-processor  -d   --llm-model claude-opus-4-20250514    -y https://www.youtube.com/watch?v=3bpNxeKmWug
+
+Config items: 
+* WSL 
+    * export LLM_BACKEND=anthropic
+    * export ANTHROPIC_API_KEY=sk...
+    * set OLLAMA_URL=http://192.168.1.68:11434
+    * export OLLAMA_URL=192.168.1.68
+* Powershell 
+    * Set-NetFirewallRule -DisplayName "Allow Ollama on port 11434" -EdgeTraversalPolicy Allow

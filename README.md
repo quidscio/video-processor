@@ -75,7 +75,7 @@ ollama serve --listen 0.0.0.0:11434
 
 To use Anthropic Cloud, first install the Anthropic SDK and set your API key (get your key at https://console.anthropic.com):
 ```bash
-pip install anthropic>=3.0.0
+pip install anthropic>=0.3.0
 export ANTHROPIC_API_KEY="<your_anthropic_api_key>"
 ```
 You must set `LLM_BACKEND=anthropic` to use Anthropic Cloud; `ANTHROPIC_API_KEY` is also required.

@@ -30,7 +30,7 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0) ->
             from anthropic import Client, HUMAN_PROMPT, AI_PROMPT
         except ModuleNotFoundError:
             raise RuntimeError(
-                "Anthropic SDK is not installed; please install with `pip install anthropic>=3.0.0`"
+                "Anthropic SDK is not installed; please install with `pip install anthropic>=0.3.0`"
             )
 
         api_key = os.getenv('ANTHROPIC_API_KEY')

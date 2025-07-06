@@ -7,12 +7,19 @@ import os
 import sys
 import tempfile
 import subprocess
+import shutil
 
 def download_srt(url: str, debug: bool = False) -> str:
     """
     Download English subtitles for a YouTube URL, preferring creator-provided subs and
     falling back to auto-generated. Returns the SRT content as a string.
     """
+    # Ensure yt-dlp is available
+    if shutil.which("yt-dlp") is None:
+        raise RuntimeError(
+            "yt-dlp executable not found in PATH; please install yt-dlp "
+            "(e.g. `pip install yt-dlp`) before using --youtube."
+        )
     # Create temporary output directory
     output_dir = tempfile.mkdtemp(prefix="vpdl-")
     base_output = os.path.join(output_dir, "%(id)s.%(ext)s")

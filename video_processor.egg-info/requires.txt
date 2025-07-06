@@ -2,3 +2,4 @@ openai-whisper>=20230314
 srt>=3.5.0
 click>=8.0
 requests>=2.25.0
+anthropic>=0.3.0
