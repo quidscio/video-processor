@@ -57,7 +57,13 @@ video-processor --youtube --debug https://youtu.be/VIDEO_ID
 video-processor --help
 
 # Development mode (run directly from source, no install):
+
 python3 -m video_processor.cli --help
+```
+
+# One-off backend override (does not require editing config.toml):
+```bash
+video-processor --backend anthropic [OTHER_OPTIONS] SOURCE
 ```
 
 ### If install fails under PEP‑668 environments

@@ -13,5 +13,5 @@ __pycache__
 *.srt 
 
 testenv2
-build/
+build*
 venv* 

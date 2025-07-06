@@ -24,56 +24,57 @@ def download_srt(url: str, debug: bool = False) -> str:
     output_dir = tempfile.mkdtemp(prefix="vpdl-")
     base_output = os.path.join(output_dir, "%(id)s.%(ext)s")
     try:
-        # Try creator-provided subtitles first
+        # Creator-provided subtitles
         cmd = [
-            "yt-dlp",
-            "--write-sub",
-            "--skip-download",
-            "--sub-lang", "en",
-            "--convert-subs", "srt",
+            "yt-dlp", "-q", "--no-warnings",
+            "--write-sub", "--skip-download",
+            "--sub-lang", "en", "--convert-subs", "srt",
             "-o", base_output,
             url,
         ]
         if debug:
-            print(f"[debug] running creator-sub cmd: {' '.join(cmd)}", file=sys.stderr)
-        stdout = None if debug else subprocess.DEVNULL
-        stderr = None if debug else subprocess.DEVNULL
-        try:
-            subprocess.run(cmd, check=True, stdout=stdout, stderr=stderr)
-        except subprocess.CalledProcessError as e:
-            if debug:
-                print(f"[debug] creator-sub cmd failed (exit code {e.returncode})", file=sys.stderr)
+            print(f"__ Running creator subtitles extraction: {' '.join(cmd)}", file=sys.stderr)
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-        # If no SRT produced, try auto-generated subtitles
+        # If none, fallback to auto-generated subtitles
         found = any(f.lower().endswith('.srt') for f in os.listdir(output_dir))
         if not found:
+            print("____ There aren't any subtitles to convert", file=sys.stderr)
             cmd_auto = [
-                "yt-dlp",
-                "--write-auto-sub",
-                "--skip-download",
-                "--sub-lang", "en",
-                "--convert-subs", "srt",
+                "yt-dlp", "-q", "--no-warnings",
+                "--write-auto-sub", "--skip-download",
+                "--sub-lang", "en", "--convert-subs", "srt",
                 "-o", base_output,
                 url,
             ]
-            if debug:
-                print(f"[debug] running auto-sub cmd: {' '.join(cmd_auto)}", file=sys.stderr)
-            try:
-                subprocess.run(cmd_auto, check=True, stdout=stdout, stderr=stderr)
-            except subprocess.CalledProcessError as e:
-                if debug:
-                    print(f"[debug] auto-sub cmd failed (exit code {e.returncode})", file=sys.stderr)
+            print(f"__ Running auto subtitles extraction: {' '.join(cmd_auto)}", file=sys.stderr)
+            subprocess.run(cmd_auto, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            # Note where file is written (VTT -> SRT conversion)
+            for fname in os.listdir(output_dir):
+                if fname.lower().endswith('.srt'):
+                    path = os.path.join(output_dir, fname)
+                    print(f"____ Writing subtitles to file {path}", file=sys.stderr)
+                    break
 
-        # Locate downloaded SRT file
+        # Read SRT content and report size
         for fname in os.listdir(output_dir):
             if fname.lower().endswith('.srt'):
                 path = os.path.join(output_dir, fname)
+                size = os.path.getsize(path)
+                # human-readable size
+                n = float(size)
+                for unit in ('B','KiB','MiB','GiB'):
+                    if n < 1024.0:
+                        hr = f"{n:.2f}{unit}"
+                        break
+                    n /= 1024.0
+                else:
+                    hr = f"{n:.2f}TiB"
+                print(f".. Received subtitles ({hr})", file=sys.stderr)
                 with open(path, encoding='utf-8') as f:
                     return f.read()
         raise RuntimeError(
-            f"No SRT file found in {output_dir}: yt-dlp did not produce any .srt file.\n"
-            "Please ensure captions exist, or drop -y to use Whisper transcription instead."
+            f"No SRT file found in {output_dir}: yt-dlp did not produce any .srt."
         )
     finally:
-        # Remove temporary directory and all contents
         shutil.rmtree(output_dir, ignore_errors=True)

@@ -6,7 +6,7 @@ Wrapper for calling the Ollama chat completion API (Claude Opus 4).
 import os
 import requests
 
-from .config import OLLAMA_URL, BACKEND
+from .config import OLLAMA_URL, BACKEND as CONFIG_BACKEND
 
 def load_template(name: str) -> str:
     """
@@ -23,8 +23,8 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0) ->
     Supported backends: Ollama (default), Anthropic Cloud.
     The backend is selected via the project config or LLM_BACKEND env var.
     """
-    # Select LLM backend (from project config or environment)
-    backend = BACKEND
+    # Select LLM backend (CLI env override, then project config)
+    backend = os.getenv('LLM_BACKEND', CONFIG_BACKEND).lower()
     if backend == 'anthropic':
         try:
             from anthropic import Client, HUMAN_PROMPT, AI_PROMPT
