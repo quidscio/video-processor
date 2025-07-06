@@ -77,6 +77,8 @@ Debug output should include:
     TODO: Eliminate environment setting dependencies; anthropic backend, any others  
     TODO: Clarify approach to enable WSL to windows host fo ollama server config  
     TODO: Add -o --output to file option. Name should be video title w/o spaces per filerenamer approach  
+    TODO: Remove/correct debug output vs standard output 
+    BUG: This must be specified in config and can't be via CLI, ollama_host = "192.168.1.68"
 
 #### Setup items 
 We want to make this configurable (video-processor.cfg) or via .env or via command line option 
@@ -99,3 +101,51 @@ Config items:
     * export OLLAMA_URL=192.168.1.68
 * Powershell 
     * Set-NetFirewallRule -DisplayName "Allow Ollama on port 11434" -EdgeTraversalPolicy Allow
+
+#### Fixing debug output. 
+
+> python3 -m video_processor.cli -d   --backend ollama -l deepseek-r1:7b    -y https://www.youtube.com/watch?v=3bpNxeKmWug
+[debug] running creator-sub cmd: yt-dlp --write-sub --skip-download --sub-lang en --convert-subs srt -o /tmp/vpdl-iq63t47c/%(id)s.%(ext)s https://www.youtube.com/watch?v=3bpNxeKmWug
+[youtube] Extracting URL: https://www.youtube.com/watch?v=3bpNxeKmWug
+[youtube] 3bpNxeKmWug: Downloading webpage
+[youtube] 3bpNxeKmWug: Downloading tv client config
+[youtube] 3bpNxeKmWug: Downloading tv player API JSON
+[youtube] 3bpNxeKmWug: Downloading ios player API JSON
+[youtube] 3bpNxeKmWug: Downloading m3u8 information
+[info] 3bpNxeKmWug: Downloading 1 format(s): 137+251
+[info] There are no subtitles for the requested languages
+[SubtitlesConvertor] There aren't any subtitles to convert
+[debug] running auto-sub cmd: yt-dlp --write-auto-sub --skip-download --sub-lang en --convert-subs srt -o /tmp/vpdl-iq63t47c/%(id)s.%(ext)s https://www.youtube.com/watch?v=3bpNxeKmWug
+[youtube] Extracting URL: https://www.youtube.com/watch?v=3bpNxeKmWug
+[youtube] 3bpNxeKmWug: Downloading webpage
+[youtube] 3bpNxeKmWug: Downloading tv client config
+[youtube] 3bpNxeKmWug: Downloading tv player API JSON
+[youtube] 3bpNxeKmWug: Downloading ios player API JSON
+[youtube] 3bpNxeKmWug: Downloading m3u8 information
+[info] 3bpNxeKmWug: Downloading subtitles: en
+[info] 3bpNxeKmWug: Downloading 1 format(s): 137+251
+[info] Writing video subtitles to: /tmp/vpdl-iq63t47c/3bpNxeKmWug.en.vtt
+[download] Destination: /tmp/vpdl-iq63t47c/3bpNxeKmWug.en.vtt
+[download] 100% of  450.29KiB in 00:00:00 at 2.49MiB/s
+[SubtitlesConvertor] Converting subtitles
+Deleting original file /tmp/vpdl-iq63t47c/3bpNxeKmWug.en.vtt (pass -k to keep)
+[debug] Sending prompt to LLM backend (ollama), model=deepseek-r1:7b, temp=0.0
+[debug] Received result from LLM (length=4382 chars)
+
+General approach: 
+
+== denotes program start 
+.. Normal status 
+__ Debug statements citing external command strings and key decisions 
+
+Sample: 
+== Video Processor [Version] == 
+.. Seeking subtitles for https://www.youtube.com/watch?v=3bpNxeKmWug
+__ Running creator titles extraction: [put command here]
+____ There aren't any subtitles to convert 
+__ Running auto-titles extraction: [put command here] 
+____ Writing subtitles to file []
+.. Received subtitles, 100% of  450.29KiB in 00:00:00 at 2.49MiB/s
+.. Sending prompt to LLM backend (ollama), model=deepseek-r1:7b, temp=0.0
+.. Received result from LLM (length=4382 chars)
+

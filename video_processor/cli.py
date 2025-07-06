@@ -35,18 +35,33 @@ from .config import WHISPER_MODEL
     default=0.0, show_default=True,
     help="Temperature for LLM chat completion."
 )
+@click.option(
+    "-b", "--backend",
+    type=click.Choice(['ollama', 'anthropic']),
+    help="One-off override for LLM backend (ollama or anthropic)."
+)
 def main(
     source: str,
     youtube: bool,
     whisper_model: str,
     llm_model: str,
     temperature: float,
+    backend: str,
     debug: bool,
 ):
     """
     Transcribe and summarize a video/audio SOURCE (file path or YouTube URL) in Markdown.
     """
+    # Program start banner
+    try:
+        from importlib.metadata import version
+        ver = version("video-processor")
+    except Exception:
+        ver = "dev"
+    click.echo(f"== Video Processor {ver} ==")
+
     if youtube:
+        click.echo(f".. Seeking subtitles for {source}")
         from .downloader import download_srt
         try:
             srt_text = download_srt(source, debug=debug)
@@ -59,20 +74,22 @@ def main(
 
     from .srt_parser import srt_to_timestamped_lines
     from .llm_client import load_template, chat
+    from .config import BACKEND as CONFIG_BACKEND
+
+    # Determine which backend to use (CLI flag overrides project config)
+    if backend:
+        os.environ['LLM_BACKEND'] = backend
+        backend_used = backend
+    else:
+        backend_used = CONFIG_BACKEND
 
     timestamped = srt_to_timestamped_lines(srt_text)
     template = load_template("transcribe.tpl")
     prompt = template.replace("{{ transcript }}", timestamped)
-    # Select LLM backend via LLM_BACKEND (default: ollama)
-    backend = os.getenv('LLM_BACKEND', 'ollama').lower()
     try:
-        if debug:
-            click.echo(
-                f"[debug] Sending prompt to LLM backend ({backend}), model={llm_model}, temp={temperature}", err=True
-            )
+        click.echo(f".. Sending prompt to LLM backend ({backend_used}), model={llm_model}, temp={temperature}")
         md = chat(prompt, model=llm_model, temperature=temperature)
-        if debug:
-            click.echo(f"[debug] Received result from LLM (length={len(md)} chars)", err=True)
+        click.echo(f".. Received result from LLM (length={len(md)} chars)")
     except Exception as e:
         # Provide a clearer error if the Ollama server returns HTTP errors or is unreachable
         import requests
@@ -110,7 +127,7 @@ def main(
         if 'Anthropic SDK is not installed' in msg:
             raise click.ClickException(
                 "Anthropic SDK is not installed; please install with:\n"
-                "  pip install anthropic>=3.0.0"
+                "  pip install anthropic>=0.3.0"
             )
         if 'ANTHROPIC_API_KEY is not set' in msg:
             raise click.ClickException(

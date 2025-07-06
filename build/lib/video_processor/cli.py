@@ -59,12 +59,13 @@ def main(
 
     from .srt_parser import srt_to_timestamped_lines
     from .llm_client import load_template, chat
+    from .config import BACKEND
 
     timestamped = srt_to_timestamped_lines(srt_text)
     template = load_template("transcribe.tpl")
     prompt = template.replace("{{ transcript }}", timestamped)
-    # Select LLM backend via LLM_BACKEND (default: ollama)
-    backend = os.getenv('LLM_BACKEND', 'ollama').lower()
+    # Use configured LLM backend
+    backend = BACKEND
     try:
         if debug:
             click.echo(
@@ -110,7 +111,7 @@ def main(
         if 'Anthropic SDK is not installed' in msg:
             raise click.ClickException(
                 "Anthropic SDK is not installed; please install with:\n"
-                "  pip install anthropic>=3.0.0"
+                "  pip install anthropic>=0.3.0"
             )
         if 'ANTHROPIC_API_KEY is not set' in msg:
             raise click.ClickException(
