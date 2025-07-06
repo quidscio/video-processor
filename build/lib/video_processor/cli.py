@@ -4,8 +4,9 @@ cli.py
 Command-line interface for video-processor.
 """
 import click
-
 import os
+import subprocess
+import re
 from .config import WHISPER_MODEL
 
 
@@ -40,6 +41,11 @@ from .config import WHISPER_MODEL
     type=click.Choice(['ollama', 'anthropic']),
     help="One-off override for LLM backend (ollama or anthropic)."
 )
+@click.option(
+    "-o", "--output",
+    default=None, metavar="FILE",
+    help="Write summarization to FILE; use -o= to auto-generate from video title (no spaces)."
+)
 def main(
     source: str,
     youtube: bool,
@@ -47,6 +53,7 @@ def main(
     llm_model: str,
     temperature: float,
     backend: str,
+    output: str,
     debug: bool,
 ):
     """
@@ -138,7 +145,32 @@ def main(
             f"Error during chat completion: {msg}\n"
             "Ensure your LLM backend is configured correctly (check LLM_BACKEND, OLLAMA_URL, ANTHROPIC_API_KEY)."
         )
-    click.echo(md)
+    # Handle output: write to file if requested, else print to stdout
+    if output is not None:
+        # Determine filename: empty or '=' means auto-generate
+        if output in ("", "="):
+            try:
+                title = subprocess.run(
+                    ["yt-dlp", "--get-title", "-q", source],
+                    check=True, capture_output=True, text=True
+                ).stdout.strip()
+            except Exception:
+                title = os.path.splitext(os.path.basename(source))[0]
+            slug = re.sub(r"[^\w\s-]", "", title).strip()
+            slug = re.sub(r"[\s_-]+", "-", slug)
+            filename = slug + ".md"
+        else:
+            filename = output
+        # Write summary to file, warning if overwriting
+        existed = os.path.exists(filename)
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(md)
+        if existed:
+            click.echo(f".. Summarization overwritten to {filename}")
+        else:
+            click.echo(f".. Summarization written to {filename}")
+    else:
+        click.echo(md)
 
 
 if __name__ == "__main__":

@@ -40,9 +40,15 @@ video-processor --youtube --debug https://youtu.be/VIDEO_ID
 # See full option list:
 video-processor --help
 
-# Development mode (run directly from source, no install):
-
 python3 -m video_processor.cli --help
+```
+
+# Examples of writing output to file:
+```bash
+# default filename (uses video title, no spaces): use `-o=` or `-o =` (equals/magic token)
+video-processor -o= -l deepseek-r1:7b -y https://youtu.be/VIDEO_ID
+# custom filename
+video-processor -o my_summary.md -l deepseek-r1:7b -y https://youtu.be/VIDEO_ID
 ```
 
 # One-off backend override (does not require editing config.toml):

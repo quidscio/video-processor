@@ -39,7 +39,8 @@ def download_srt(url: str, debug: bool = False) -> str:
         # If none, fallback to auto-generated subtitles
         found = any(f.lower().endswith('.srt') for f in os.listdir(output_dir))
         if not found:
-            print("____ There aren't any subtitles to convert", file=sys.stderr)
+            if debug:
+                print("____ There aren't any subtitles to convert", file=sys.stderr)
             cmd_auto = [
                 "yt-dlp", "-q", "--no-warnings",
                 "--write-auto-sub", "--skip-download",
@@ -47,14 +48,16 @@ def download_srt(url: str, debug: bool = False) -> str:
                 "-o", base_output,
                 url,
             ]
-            print(f"__ Running auto subtitles extraction: {' '.join(cmd_auto)}", file=sys.stderr)
+            if debug:
+                print(f"__ Running auto subtitles extraction: {' '.join(cmd_auto)}", file=sys.stderr)
             subprocess.run(cmd_auto, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             # Note where file is written (VTT -> SRT conversion)
-            for fname in os.listdir(output_dir):
-                if fname.lower().endswith('.srt'):
-                    path = os.path.join(output_dir, fname)
-                    print(f"____ Writing subtitles to file {path}", file=sys.stderr)
-                    break
+            if debug:
+                for fname in os.listdir(output_dir):
+                    if fname.lower().endswith('.srt'):
+                        path = os.path.join(output_dir, fname)
+                        print(f"____ Writing subtitles to file {path}", file=sys.stderr)
+                        break
 
         # Read SRT content and report size
         for fname in os.listdir(output_dir):
