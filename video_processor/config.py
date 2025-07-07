@@ -40,4 +40,5 @@ OLLAMA_URL = _raw
 
 # Whisper defaults
 WHISPER_MODEL = os.getenv("WHISPER_MODEL", _cfg.get("whisper_model", "base"))
+# Device for Whisper (e.g. 'cuda' or 'cpu')
 DEVICE = os.getenv("DEVICE", _cfg.get("device", "cuda"))

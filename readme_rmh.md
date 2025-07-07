@@ -74,8 +74,8 @@ Debug output should include:
 
 07.03.25 Requirements  
 07.06.25 V1 YT URL works. Improvements required  
-    TODO: Eliminate environment setting dependencies; anthropic backend, any others  
-    TODO: Test approach to enable WSL to windows host fo ollama server config  
+    TODO: (in progress) Eliminate environment setting dependencies; anthropic backend, any others  
+    TODO: Test approach to enable WSL to windows host for ollama server config  
     BUG: This must be specified in config and can't be via CLI, ollama_host = "192.168.1.68"
 
 #### Setup items 

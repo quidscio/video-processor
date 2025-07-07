@@ -1,6 +1,6 @@
 # video-processor
 
-Command-line tool to transcribe and summarize video or audio files using Whisper and Claude Opus 4.
+Command-line tool to transcribe and summarize video or audio files using Whisper and Claude Opus  4.
 
 See `readme_rmh.md` for full specifications and design.
 
@@ -56,13 +56,13 @@ video-processor -o my_summary.md -l deepseek-r1:7b -y https://youtu.be/VIDEO_ID
 video-processor --backend anthropic [OTHER_OPTIONS] SOURCE
 ```
 
-### If install fails under PEP‑668 environments
+### If install fails under PEP   668 environments
 
-Some systems (e.g. Debian/Ubuntu PEP‑668) prevent `pip install .` in the current Python interpreter.
+Some systems (e.g. Debian/Ubuntu PEP   668) prevent `pip install .` in the current Python interpreter.
 In that case, you can run directly from the source tree without installing the package,
 but you need to install the dependencies manually:
 ```bash
-# Install dependencies manually when `pip install .` is blocked by PEP‑668
+# Install dependencies manually when `pip install .` is blocked by PEP   668
 pip install openai-whisper srt click requests anthropic python-dotenv tomli yt-dlp
 python3 -m video_processor.cli [OPTIONS] SOURCE
 ```
@@ -70,9 +70,32 @@ python3 -m video_processor.cli [OPTIONS] SOURCE
 ## Ollama setup
 
 Make sure your Ollama server is running and that you have pulled your desired model (e.g. claude-opus-4):
+
 ```bash
 ollama pull claude-opus-4
 ollama serve --listen 0.0.0.0:11434
+```
+
+## WSL2 GPU Setup (for Whisper GPU acceleration)
+
+To let Whisper load models on your Windows GPU under WSL2, install NVIDIA's WSL2 CUDA driver on Windows and a matching CUDA-enabled PyTorch wheel in WSL:
+
+**On Windows (PowerShell as Administrator):**
+```powershell
+wsl --update
+wsl --shutdown
+# Install NVIDIA CUDA on WSL driver from https://developer.nvidia.com/cuda/wsl
+```
+
+**In WSL (inside your virtualenv):**
+```bash
+pip install --upgrade \
+  torch torchvision torchaudio \
+  --index-url https://download.pytorch.org/whl/cu121
+python3 - << 'EOF'
+import torch
+print('CUDA available:', torch.cuda.is_available(), 'CUDA version:', torch.version.cuda)
+EOF
 ```
 
 ## Anthropic setup
@@ -106,7 +129,7 @@ ollama_host = "localhost:11434"
 
 # Whisper defaults:
 whisper_model = "base"
-device = "cuda"
+device = "cuda"  # or "cpu" to force local CPU transcription
 ```
 
 Settings in `config.toml` are loaded automatically when you run `video-processor`.
