@@ -27,4 +27,5 @@ video-processor = "video_processor.cli:main"
 include = ["video_processor*"]
 
 [tool.setuptools.package-data]
-"video_processor.prompts" = ["*.tpl"]
+"video_processor.prompts"         = ["*.tpl"]
+"video_processor"               = ["config_template.toml"]

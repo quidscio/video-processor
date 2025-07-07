@@ -1,0 +1,10 @@
+# Default LLM backend: "ollama" or "anthropic"
+backend = "ollama"
+
+# Ollama server host (host[:port], defaults to port 11434)
+# On WSL, host will be IP of Windows host. Firewall must be set per README
+ollama_host = "localhost:11434"
+
+# Whisper defaults:
+whisper_model = "base"
+device        = "cuda"  # or "cpu"

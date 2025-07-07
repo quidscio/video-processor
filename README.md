@@ -11,8 +11,11 @@ See `readme_rmh.md` for full specifications and design.
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Install this package
-pip install .
+# Install latest release from PyPI
+pip install video-processor
+
+# (or, install from this source tree for development / upgrade to latest local changes)
+pip install -U .
 ```
 
 ## Prerequisites
@@ -50,10 +53,13 @@ video-processor -o= -l deepseek-r1:7b -y https://youtu.be/VIDEO_ID
 # custom filename
 video-processor -o my_summary.md -l deepseek-r1:7b -y https://youtu.be/VIDEO_ID
 ```
-
-# One-off backend override (does not require editing config.toml):
+# One-off backend/host override (does not require editing config.toml):
 ```bash
+# override LLM backend
 video-processor --backend anthropic [OTHER_OPTIONS] SOURCE
+# override Ollama host
+video-processor --ollama-host 192.168.1.68:11434 -l deepseek-r1:7b SOURCE
+
 ```
 
 ### If install fails under PEP   668 environments
@@ -115,21 +121,48 @@ This CLI will automatically fallback to the new Anthropic Messages API for model
 video-processor [OPTIONS] SOURCE
 ```
 
-## Project-local configuration
+## Configuration
 
-You can set per-project defaults by creating `config.toml` in your project root:
+You can specify defaults in a user-wide or project-local `config.toml`. Values in the project-local file override the user-wide settings.
+
+### User-wide configuration
+
+Place `config.toml` under your XDG config directory (default `~/.config/video-processor/config.toml`):
 
 ```toml
 # Default LLM backend: "ollama" or "anthropic"
-backend = "ollama"
-
-# Host (and optional port) for your Ollama server.
-# If you omit scheme/port, code assumes http://<host>:11434
-ollama_host = "localhost:11434"
+backend     = "ollama"
+# Ollama server host (host[:port], defaults to port 11434)
+ollama_host = "192.168.1.68"
 
 # Whisper defaults:
 whisper_model = "base"
-device = "cuda"  # or "cpu" to force local CPU transcription
+device        = "cuda"  # or "cpu"
 ```
 
-Settings in `config.toml` are loaded automatically when you run `video-processor`.
+### Project-local configuration
+
+Create `config.toml` in your project root to override the user-wide settings:
+
+```toml
+# Per-project overrides (same syntax as above)
+backend     = "anthropic"
+ollama_host = "localhost:11434"
+```
+
+### Bootstrapping a default config file
+
+Rather than manually editing both project-local and user configs, the CLI can do it all in one step:
+
+```bash
+# Copy the internal template (if needed) into ./config.toml
+# then symlink it into ~/.config/video-processor/config.toml
+video-processor --init-config
+```
+
+> **Tip:** if you ever need to customize or relocate the link yourself:
+>
+> ```bash
+> mkdir -p ~/.config/video-processor
+> ln -sf "$(pwd)/config.toml" ~/.config/video-processor/config.toml
+> ```

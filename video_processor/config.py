@@ -20,11 +20,21 @@ try:
 except ModuleNotFoundError:
     import tomli as tomllib
 
+# Configuration precedence: user-wide (~/.config/video-processor/config.toml), then project-local (./config.toml)
 _cfg = {}
+# User-wide config via XDG_CONFIG_HOME or fallback to ~/.config
+_xdg = Path(os.getenv("XDG_CONFIG_HOME", Path.home() / ".config"))
+_user_cfg = _xdg / "video-processor" / "config.toml"
+if _user_cfg.exists():
+    with open(_user_cfg, "rb") as f:
+        _cfg = tomllib.load(f)
+
+# Project-local config overrides user-wide settings
 _cfg_path = Path.cwd() / "config.toml"
 if _cfg_path.exists():
     with open(_cfg_path, "rb") as f:
-        _cfg = tomllib.load(f)
+        proj = tomllib.load(f)
+        _cfg.update(proj)
 
 # LLM backend (ollama or anthropic)
 BACKEND = os.getenv("LLM_BACKEND", _cfg.get("backend", "ollama")).lower()

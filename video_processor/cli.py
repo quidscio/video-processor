@@ -7,11 +7,13 @@ import click
 import os
 import subprocess
 import re
+from pathlib import Path
+import importlib.resources as pkg_resources
 from .config import WHISPER_MODEL
 
 
 @click.command()
-@click.argument("source", type=str)
+@click.argument("source", type=str, required=False)
 @click.option(
     "-y", "--youtube", is_flag=True,
     help="Treat SOURCE as a YouTube URL and download captions via yt-dlp."
@@ -42,19 +44,31 @@ from .config import WHISPER_MODEL
     help="One-off override for LLM backend (ollama or anthropic)."
 )
 @click.option(
+    "--ollama-host",
+    default=None, metavar="HOST[:PORT]",
+    help="One-off override for Ollama server host (overrides config file and env)."
+)
+@click.option(
+    "--init-config",
+    is_flag=True,
+    help="Bootstrap project-local config.toml (copy template if missing) and symlink it into XDG config area, then exit."
+)
+@click.option(
     "-o", "--output",
     default=None, metavar="FILE",
     help="Write summarization to FILE; use -o= to auto-generate from video title (no spaces)."
 )
 def main(
-    source: str,
     youtube: bool,
     whisper_model: str,
     llm_model: str,
     temperature: float,
     backend: str,
+    ollama_host: str,
+    init_config: bool,
     output: str,
     debug: bool,
+    source: str = None,
 ):
     """
     Transcribe and summarize a video/audio SOURCE (file path or YouTube URL) in Markdown.
@@ -66,6 +80,29 @@ def main(
     except Exception:
         ver = "dev"
     click.echo(f"== Video Processor {ver} ==")
+
+    # Bootstrap project-local config and symlink into user XDG config area
+    if init_config:
+        local_cfg = Path.cwd() / 'config.toml'
+        if not local_cfg.exists():
+            data = pkg_resources.read_text('video_processor', 'config_template.toml')
+            local_cfg.write_text(data, encoding='utf-8')
+            click.echo(f"Copied template to {local_cfg}")
+        else:
+            click.echo(f"Local config already exists at {local_cfg}, skipping template copy")
+
+        xdg_dir = Path(os.getenv('XDG_CONFIG_HOME', Path.home() / '.config')) / 'video-processor'
+        xdg_file = xdg_dir / 'config.toml'
+        xdg_dir.mkdir(parents=True, exist_ok=True)
+        if xdg_file.exists() or xdg_file.is_symlink():
+            xdg_file.unlink()
+        os.symlink(local_cfg, xdg_file)
+        click.echo(f"Symlinked {xdg_file} → {local_cfg}")
+        return
+
+    # SOURCE argument becomes required for normal operation
+    if source is None:
+        raise click.UsageError("Missing argument 'SOURCE'.")
 
     if youtube:
         click.echo(f".. Seeking subtitles for {source}")
@@ -89,6 +126,19 @@ def main(
         backend_used = backend
     else:
         backend_used = CONFIG_BACKEND
+
+    # CLI override for Ollama host: normalize and override config/env and llm_client
+    if ollama_host:
+        _raw = ollama_host
+        if not _raw.startswith(("http://", "https://")):
+            _hp = _raw
+            if ":" not in _hp:
+                _hp = f"{_hp}:11434"
+            _raw = "http://" + _hp
+        os.environ["OLLAMA_URL"] = _raw
+        from . import llm_client as _lc
+        _lc.OLLAMA_URL = _raw
+        click.echo(f".. Overriding Ollama URL to {_raw}")
 
     timestamped = srt_to_timestamped_lines(srt_text)
     template = load_template("transcribe.tpl")
