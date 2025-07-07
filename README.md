@@ -27,6 +27,15 @@ pip install -U .
   ```
 (or: `apt install yt-dlp` / download the binary from https://github.com/yt-dlp/yt-dlp)
 
+- `ffmpeg` must be installed and on your PATH for Whisper transcription to decode the full audio track.
+  ```bash
+  # Debian/Ubuntu
+  apt install ffmpeg
+
+  # macOS (Homebrew)
+  brew install ffmpeg
+  ```
+
 
 ## Usage
 
