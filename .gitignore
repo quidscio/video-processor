@@ -16,3 +16,9 @@ testenv2
 build
 venv* 
 *.egg-info
+TestAudio.mp3
+.gitignore
+TestWebm.webm
+TestAudio.md
+TestVideo.md
+TestWebm.md
