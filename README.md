@@ -167,6 +167,15 @@ Rather than manually editing both project-local and user configs, the CLI can do
 # Copy the internal template (if needed) into ./config.toml
 # then symlink it into ~/.config/video-processor/config.toml
 video-processor --init-config
+``` 
+
+### Symlink the CLI into ~/bin
+
+Once the CLI is installed or available on your current PATH, you can install its entrypoint into
+`~/bin` with one command (no venv activation required thereafter):
+
+```bash
+video-processor --symlink-cli
 ```
 
 > **Tip:** if you ever need to customize or relocate the link yourself:

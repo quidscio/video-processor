@@ -7,12 +7,28 @@ import click
 import os
 import subprocess
 import re
+import shutil
 from pathlib import Path
 import importlib.resources as pkg_resources
 from .config import WHISPER_MODEL
 
+# Package version for --version flag
+try:
+    from importlib.metadata import version, PackageNotFoundError
+    _pkg_version = version("video-processor")
+except Exception:
+    _pkg_version = "dev"
 
-@click.command()
+# Custom command class to include version header in help output
+class VersionedHelpCommand(click.Command):
+    def format_help(self, ctx, formatter):
+        formatter.write_text(f"{ctx.info_name} {_pkg_version}")
+        formatter.write_text("")
+        super().format_help(ctx, formatter)
+
+
+@click.command(cls=VersionedHelpCommand)
+@click.version_option(_pkg_version, "--version", "-V", prog_name="video-processor", message="%(prog)s %(version)s")
 @click.argument("source", type=str, required=False)
 @click.option(
     "-y", "--youtube", is_flag=True,
@@ -54,6 +70,11 @@ from .config import WHISPER_MODEL
     help="Bootstrap project-local config.toml (copy template if missing) and symlink it into XDG config area, then exit."
 )
 @click.option(
+    "--symlink-cli",
+    is_flag=True,
+    help="Symlink the installed video-processor entrypoint into $HOME/bin and exit."
+)
+@click.option(
     "-o", "--output",
     default=None, metavar="FILE",
     help="Write summarization to FILE; use -o= to auto-generate from video title (no spaces)."
@@ -66,6 +87,7 @@ def main(
     backend: str,
     ollama_host: str,
     init_config: bool,
+    symlink_cli: bool,
     output: str,
     debug: bool,
     source: str = None,
@@ -100,6 +122,23 @@ def main(
         click.echo(f"Symlinked {xdg_file} → {local_cfg}")
         return
 
+    # Symlink the CLI entrypoint into ~/bin and exit
+    if symlink_cli:
+        # Locate the installed script
+        script = shutil.which("video-processor")
+        if not script:
+            raise click.ClickException(
+                "Cannot find 'video-processor' executable in PATH; is it installed?"
+            )
+        dest_dir = Path.home() / 'bin'
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        dest = dest_dir / 'video-processor'
+        if dest.exists() or dest.is_symlink():
+            dest.unlink()
+        os.symlink(script, dest)
+        click.echo(f"Symlinked {script} → {dest}")
+        return
+
     # SOURCE argument becomes required for normal operation
     if source is None:
         raise click.UsageError("Missing argument 'SOURCE'.")
@@ -114,7 +153,7 @@ def main(
     else:
         from .converter import transcribe_to_srt
 
-        srt_text = transcribe_to_srt(source, whisper_model)
+        srt_text = transcribe_to_srt(source, whisper_model, debug=debug)
 
     from .srt_parser import srt_to_timestamped_lines
     from .llm_client import load_template, chat
