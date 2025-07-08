@@ -35,7 +35,11 @@ class VersionedHelpCommand(click.Command):
     help="Treat SOURCE as a YouTube URL and download captions via yt-dlp."
 )
 @click.option(
-    "-d", "--debug",
+    "-d", "--download-video", is_flag=True,
+    help="Also download the full YouTube video via yt-dlp."
+)
+@click.option(
+    "-D", "--debug",
     is_flag=True,
     help="Show debug output (commands and yt-dlp logs) when downloading captions."
 )
@@ -81,6 +85,7 @@ class VersionedHelpCommand(click.Command):
 )
 def main(
     youtube: bool,
+    download_video: bool,
     whisper_model: str,
     llm_model: str,
     temperature: float,
@@ -145,6 +150,32 @@ def main(
 
     if youtube:
         click.echo(f".. Seeking subtitles for {source}")
+        if download_video:
+            click.echo(f".. Downloading full video for {source}")
+            # sanitize title for output basename (slugify like for SRT)
+            try:
+                title = subprocess.run(
+                    ["yt-dlp", "--get-title", "-q", source],
+                    check=True, capture_output=True, text=True
+                ).stdout.strip()
+            except Exception:
+                title = None
+            if title:
+                slug = re.sub(r"[^\w\s-]", "", title).strip()
+                slug = re.sub(r"[\s_-]+", "-", slug)
+                out_template = f"{slug}.%(ext)s"
+            else:
+                out_template = "%(id)s.%(ext)s"
+            cmd_vid = ["yt-dlp"]
+            if not debug:
+                cmd_vid += ["-q", "--no-warnings"]
+            cmd_vid += ["-o", out_template, source]
+            if debug:
+                click.echo(f"__ Running video download: {' '.join(cmd_vid)}", err=True)
+            try:
+                subprocess.run(cmd_vid, check=True)
+            except Exception as e:
+                raise click.ClickException(f"Error downloading video: {e}")
         from .downloader import download_srt
         try:
             srt_text = download_srt(source, debug=debug)

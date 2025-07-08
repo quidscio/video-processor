@@ -147,3 +147,9 @@ ____ Writing subtitles to file []
 .. Sending prompt to LLM backend (ollama), model=deepseek-r1:7b, temp=0.0
 .. Received result from LLM (length=4382 chars)
 
+### Favorite command lines
+
+```bash
+video-processor -o= -w medium -b ollama -l deepseek-r1:7b  -y https://www.youtube.com/watch?v=VIDEO
+video-processor -o= -w medium -b anthropic -l claude-opus-4-20250514     -y https://www.youtube.com/watch?v=VIDEO
+```

@@ -7,6 +7,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import re
 import whisper
 import srt
 from datetime import timedelta, datetime
@@ -38,10 +39,17 @@ def transcribe_to_srt(
         raise RuntimeError(
             "ffmpeg not found in PATH; please install ffmpeg for transcription"
         )
-    # Timestamp prefix for debug artifacts
+    # Timestamp prefix for debug artifacts and sanitize basename for debug files
     ts = datetime.now().strftime("%Y%m%d_%H%M%S") if debug else None
-    stem = Path(input_path).stem
-    wav_name = f"{ts}_{stem}.wav" if debug else None
+    raw_stem = Path(input_path).stem
+    if debug:
+        # slugify stem: remove invalid chars and replace spaces/underscores with hyphens
+        stem = re.sub(r"[^\w\s-]", "", raw_stem).strip()
+        stem = re.sub(r"[\s_-]+", "-", stem)
+        wav_name = f"{ts}_{stem}.wav"
+    else:
+        stem = raw_stem
+        wav_name = None
     tmp_wav = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
     tmp_wav.close()
     try:
