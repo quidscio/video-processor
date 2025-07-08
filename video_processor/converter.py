@@ -58,6 +58,21 @@ def transcribe_to_srt(
             print(f"__ Running ffmpeg conversion: {' '.join(cmd)}")
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if debug:
+            # report size of converted WAV
+            try:
+                size = os.path.getsize(tmp_wav.name)
+                n = float(size)
+                for unit in ('B','KiB','MiB','GiB'):
+                    if n < 1024.0:
+                        hr = f"{n:.2f}{unit}"
+                        break
+                    n /= 1024.0
+                else:
+                    hr = f"{n:.2f}TiB"
+                print(f"____ Converted WAV size: {hr}")
+            except Exception:
+                pass
+        if debug:
             # Confirm Whisper parameters and environment
             ver = getattr(whisper, "__version__", None)
             print(f"__ whisper version: {ver}, model_name={model_name!r}, device={DEVICE!r}")
