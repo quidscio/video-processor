@@ -175,7 +175,9 @@ To use Anthropic Cloud, first install the Anthropic SDK:
 ```bash
 pip install anthropic>=0.3.0
 ```
-Then create a `.env` file in your project root with your API key:
+Create a `.env` file in your project root with your API key. The CLI
+first searches this project tree, then the directory you run from, and
+finally falls back to `~/.env` if no project file is found:
 ```ini
 ANTHROPIC_API_KEY=<your_anthropic_api_key_here>
 ```
