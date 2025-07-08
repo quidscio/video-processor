@@ -8,7 +8,19 @@ from pathlib import Path
 try:
     from dotenv import load_dotenv, find_dotenv
 
-    _dotenv_path = find_dotenv(usecwd=True)
+    # First search relative to this file (project tree)
+    _dotenv_path = find_dotenv()
+
+    # Then search from the current working directory
+    if not _dotenv_path:
+        _dotenv_path = find_dotenv(usecwd=True)
+
+    # Finally check ~/.env as a fallback
+    if not _dotenv_path:
+        home_env = Path.home() / ".env"
+        if home_env.exists():
+            _dotenv_path = str(home_env)
+
     if _dotenv_path:
         load_dotenv(_dotenv_path, override=False)
 except ImportError:
