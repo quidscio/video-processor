@@ -20,7 +20,6 @@ pip install -U .
 
 ## Prerequisites
 
-
 - `yt-dlp` must be installed and on your PATH if you plan to use `--youtube`.
   ```bash
   pip install yt-dlp
@@ -36,10 +35,46 @@ pip install -U .
   brew install ffmpeg
   ```
 
-
 ## Usage
 
+### First Time 
+
+#### Bootstrapping a default config file
+
+Rather than manually editing both project-local and user configs, the CLI can do it all in one step:
+
 ```bash
+# Copy the internal template (if needed) into ./config.toml
+# then symlink it into ~/.config/video-processor/config.toml
+video-processor --init-config
+``` 
+
+#### Symlink the CLI into ~/bin
+
+Once the CLI is installed or available on your current PATH, you can install its entrypoint into
+`~/bin` with one command (no venv activation required thereafter):
+
+```bash
+video-processor --symlink-cli
+```
+
+> **Tip:** if you ever need to customize or relocate the link yourself:
+>
+> ```bash
+> mkdir -p ~/.config/video-processor
+> ln -sf "$(pwd)/config.toml" ~/.config/video-processor/config.toml
+> ```
+
+### Favorite Backends and Models 
+
+```bash
+# Download YouTube, transcribe, and summarize locally
+video-processor -o= -w medium -b ollama -l deepseek-r1:7b  -y https://www.youtube.com/watch?v=BaETCQTnr8k
+
+# Same but use Anthropic for Summarization 
+video-processor -o= -w medium -b anthropic -l claude-opus-4-20250514     -y https://www.youtube.com/watch?v=BaETCQTnr8k
+video-processor -o= -w medium -b anthropic -l claude-sonnet-4-20250514   -y https://www.youtube.com/watch?v=BaETCQTnr8k
+
 # Transcribe a local media file:
 video-processor my_video.mp4
 
@@ -52,22 +87,33 @@ video-processor --youtube --debug https://youtu.be/VIDEO_ID
 # See full option list:
 video-processor --help
 
+```
+### Developing Hints 
+```bash
+# All in project folder 
+cd project_folder 
+
+# build 
+pip install -U .          # Install to be used anywhere by user freezing production version vs edits 
+pip install -e .          # Install to be executed from dev area allowing ongoing edits 
+
+# execute modules directly (alternative to `pip install -e`)
 python3 -m video_processor.cli --help
 ```
 
 # Examples of writing output to file:
 ```bash
 # default filename (uses video title, no spaces): use `-o=` or `-o =` (equals/magic token)
-video-processor -o= -l deepseek-r1:7b -y https://youtu.be/VIDEO_ID
+video-processor -o= -y https://youtu.be/VIDEO_ID
 # custom filename
-video-processor -o my_summary.md -l deepseek-r1:7b -y https://youtu.be/VIDEO_ID
+video-processor -o my_summary.md  -y https://youtu.be/VIDEO_ID
 ```
 # One-off backend/host override (does not require editing config.toml):
 ```bash
 # override LLM backend
-video-processor --backend anthropic [OTHER_OPTIONS] SOURCE
+video-processor --backend anthropic | ollama [OTHER_OPTIONS] SOURCE
 # override Ollama host
-video-processor --ollama-host 192.168.1.68:11434 -l deepseek-r1:7b SOURCE
+video-processor --ollama-host 192.168.1.68:11434 [OTHER_OPTIONS] SOURCE
 
 ```
 
@@ -84,10 +130,10 @@ python3 -m video_processor.cli [OPTIONS] SOURCE
 
 ## Ollama setup
 
-Make sure your Ollama server is running and that you have pulled your desired model (e.g. claude-opus-4):
+Make sure your Ollama server is running and that you have pulled your desired model:
 
 ```bash
-ollama pull claude-opus-4
+ollama pull MODEL
 ollama serve --listen 0.0.0.0:11434
 ```
 
@@ -112,6 +158,12 @@ import torch
 print('CUDA available:', torch.cuda.is_available(), 'CUDA version:', torch.version.cuda)
 EOF
 ```
+## WSL Access to Ollama on Windows 
+
+```powershell 
+New-NetFirewallRule -DisplayName "Allow Ollama on port 11434" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 11434
+Set-NetFirewallRule -DisplayName "Allow Ollama on port 11434" -EdgeTraversalPolicy Allow
+```
 
 ## Anthropic setup
 
@@ -132,11 +184,11 @@ video-processor [OPTIONS] SOURCE
 
 ## Configuration
 
-You can specify defaults in a user-wide or project-local `config.toml`. Values in the project-local file override the user-wide settings.
+You can specify defaults in a user-wide or project-local `config.toml`. Values in the project-local file override the user-wide settings unless you utilized the symlink option. Then, they are identical. 
 
 ### User-wide configuration
 
-Place `config.toml` under your XDG config directory (default `~/.config/video-processor/config.toml`):
+There is a CLI option to symlink a `config.toml` under your XDG config directory (default `~/.config/video-processor/config.toml`):
 
 ```toml
 # Default LLM backend: "ollama" or "anthropic"
@@ -145,8 +197,8 @@ backend     = "ollama"
 ollama_host = "192.168.1.68"
 
 # Whisper defaults:
-whisper_model = "base"
-device        = "cuda"  # or "cpu"
+whisper_model = "medium"    # or base or small 
+device        = "cuda"      # or "cpu"
 ```
 
 ### Project-local configuration
@@ -159,28 +211,5 @@ backend     = "anthropic"
 ollama_host = "localhost:11434"
 ```
 
-### Bootstrapping a default config file
-
-Rather than manually editing both project-local and user configs, the CLI can do it all in one step:
-
-```bash
-# Copy the internal template (if needed) into ./config.toml
-# then symlink it into ~/.config/video-processor/config.toml
-video-processor --init-config
-``` 
-
-### Symlink the CLI into ~/bin
-
-Once the CLI is installed or available on your current PATH, you can install its entrypoint into
-`~/bin` with one command (no venv activation required thereafter):
-
-```bash
-video-processor --symlink-cli
-```
-
-> **Tip:** if you ever need to customize or relocate the link yourself:
->
-> ```bash
-> mkdir -p ~/.config/video-processor
-> ln -sf "$(pwd)/config.toml" ~/.config/video-processor/config.toml
-> ```
+# Known Issues
+1. Specifying a new whisper model causes HuggingFace download on first run...ready delay. Afterwards, it loads from a cache.  

@@ -49,9 +49,35 @@ def transcribe_to_srt(
         if debug:
             print(f"__ Running ffmpeg conversion: {' '.join(cmd)}")
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if debug:
+            # Confirm Whisper parameters and environment
+            ver = getattr(whisper, "__version__", None)
+            print(f"__ whisper version: {ver}, model_name={model_name!r}, device={DEVICE!r}")
+            try:
+                import torch
+                print(
+                    f"__ torch.cuda.is_available(): {torch.cuda.is_available()}, "
+                    f"torch.cuda.device_count(): {torch.cuda.device_count()}"
+                )
+            except ImportError:
+                pass
+        if debug: print(f"__ Loading model '{model_name}' for transcription")
         model = load_model(model_name)
-        result = model.transcribe(tmp_wav.name, verbose=debug)
+        if debug: print(f"____ Model loaded.")
+        if debug:
+            try:
+                print(f"__ Getting model parms")
+                dev = next(model.parameters()).device
+                print(f"__ Loaded Whisper model parameters on device: {dev}")
+            except Exception:
+                print("** Failed to get model parameters, using default device")
+                pass
+        print(f"__ Starting transcription of {tmp_wav.name}")
+        result = model.transcribe(tmp_wav.name)
+        # result = model.transcribe(tmp_wav.name, verbose=debug)
+        print(f"____ Transcription result length: {len(result)}")
     finally:
+        print(f"__ Transcription complete")
         if debug:
             # preserve intermediate WAV for inspection
             dest = Path.cwd() / wav_name
