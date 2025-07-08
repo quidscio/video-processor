@@ -25,6 +25,15 @@ class VersionedHelpCommand(click.Command):
         formatter.write_text(f"{ctx.info_name} {_pkg_version}")
         formatter.write_text("")
         super().format_help(ctx, formatter)
+        # Example invocations
+        formatter.write_text("")
+        formatter.write_text("Examples:")
+        formatter.write_text(
+            "  video-processor -o= -w medium -b ollama -l deepseek-r1:7b  -d -y https://www.youtube.com/watch?v=VIDEO"
+        )
+        formatter.write_text(
+            "  video-processor -o= -w medium -b anthropic -l claude-opus-4-20250514 -d -y https://www.youtube.com/watch?v=VIDEO"
+        )
 
 
 @click.command(cls=VersionedHelpCommand)

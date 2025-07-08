@@ -24,7 +24,11 @@ pip install -U .
   ```bash
   pip install yt-dlp
   ```
-(or: `apt install yt-dlp` / download the binary from https://github.com/yt-dlp/yt-dlp)
+
+  Note: As of Debian 12, the package version is years out of date. So symlink to the dev venv
+  ```bash
+  ln -s /mnt/c/q/arc/projects/video-processor/.venv/bin/yt-dlp /home/user/bin/yt-dlp
+  ```
 
 - `ffmpeg` must be installed and on your PATH for Whisper transcription to decode the full audio track.
   ```bash
