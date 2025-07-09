@@ -86,6 +86,11 @@ class VersionedHelpCommand(click.Command):
     help="Temperature for LLM chat completion."
 )
 @click.option(
+    "--token-limit",
+    default=10000, show_default=True, type=int,
+    help="Maximum OUTPUT tokens for LLM response generation."
+)
+@click.option(
     "-b", "--backend",
     type=click.Choice(['ollama', 'anthropic']),
     help="One-off override for LLM backend (ollama or anthropic)."
@@ -116,6 +121,7 @@ def main(
     whisper_model: str,
     llm_model: str,
     temperature: float,
+    token_limit: int,
     backend: str,
     ollama_host: str,
     init_config: bool,
@@ -269,8 +275,8 @@ def main(
     template = load_template("transcribe.tpl")
     prompt = template.replace("{{ transcript }}", timestamped)
     try:
-        click.echo(f".. Sending prompt to LLM backend ({backend_used}), model={llm_model}, temp={temperature}")
-        md = chat(prompt, model=llm_model, temperature=temperature)
+        click.echo(f".. Sending prompt to LLM backend ({backend_used}), model={llm_model}, temp={temperature}, max_tokens={token_limit}")
+        md = chat(prompt, model=llm_model, temperature=temperature, debug=debug, max_tokens=token_limit)
         click.echo(f".. Received result from LLM (length={len(md)} chars)")
     except Exception as e:
         # Provide a clearer error if the Ollama server returns HTTP errors or is unreachable

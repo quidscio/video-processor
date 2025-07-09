@@ -4,6 +4,7 @@ llm_client.py
 Wrapper for calling the Ollama chat completion API (Claude Opus 4).
 """
 import os
+import sys
 import requests
 
 from .config import OLLAMA_URL, BACKEND as CONFIG_BACKEND
@@ -17,7 +18,7 @@ def load_template(name: str) -> str:
     with open(path, encoding='utf-8') as f:
         return f.read()
 
-def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0) -> str:
+def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, debug: bool = False, max_tokens: int = 10000) -> str:
     """
     Send a user prompt to the selected LLM backend and return the content.
     Supported backends: Ollama (default), Anthropic Cloud.
@@ -25,6 +26,14 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0) ->
     """
     # Select LLM backend (CLI env override, then project config)
     backend = os.getenv('LLM_BACKEND', CONFIG_BACKEND).lower()
+    
+    # Debug logging for token usage
+    if debug:
+        prompt_length = len(prompt)
+        # Rough token estimation (1 token ≈ 4 characters)
+        estimated_input_tokens = prompt_length // 4
+        print(f"__ LLM Debug: Input length: {prompt_length} chars (~{estimated_input_tokens} tokens)", file=sys.stderr)
+    
     if backend == 'anthropic':
         try:
             from anthropic import Client, HUMAN_PROMPT, AI_PROMPT
@@ -46,11 +55,27 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0) ->
                 model=model,
                 prompt=full_prompt,
                 temperature=temperature,
-                max_tokens_to_sample=2000,
+                max_tokens_to_sample=max_tokens,
             )
-            return response.completion
+            # Check for token limit issues
+            completion = response.completion
+            if hasattr(response, 'stop_reason') and response.stop_reason == 'max_tokens':
+                print(f"** ERROR: Output truncated due to OUTPUT token limit ({max_tokens} tokens reached)", file=sys.stderr)
+            
+            # Debug logging for output
+            if debug:
+                output_length = len(completion)
+                estimated_output_tokens = output_length // 4
+                print(f"__ LLM Debug: Output length: {output_length} chars (~{estimated_output_tokens} tokens)", file=sys.stderr)
+                if hasattr(response, 'stop_reason'):
+                    print(f"__ LLM Debug: Stop reason: {response.stop_reason}", file=sys.stderr)
+            
+            return completion
         except Exception as e:
             err = str(e)
+            # Check for token limit errors
+            if 'token' in err.lower() and ('limit' in err.lower() or 'exceeded' in err.lower()):
+                raise RuntimeError(f"Token limit exceeded: {err}. Consider reducing transcript length or increasing token limit.")
             # Fallback to the Anthropic Messages API for models that no longer support Completions
             if 'Please use the Messages API instead' in err:
                 messages_payload = [{'role': 'user', 'content': prompt}]
@@ -58,7 +83,7 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0) ->
                     model=model,
                     messages=messages_payload,
                     temperature=temperature,
-                    max_tokens=2000,
+                    max_tokens=max_tokens,
                 )
                 # Extract and concatenate text blocks from the response
                 try:
@@ -68,6 +93,19 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0) ->
                         # Each block has .text for text content
                         if hasattr(block, 'text'):
                             text += block.text
+                    
+                    # Check for token limit issues in Messages API
+                    if hasattr(resp_msg, 'stop_reason') and resp_msg.stop_reason == 'max_tokens':
+                        print(f"** ERROR: Output truncated due to OUTPUT token limit ({max_tokens} tokens reached)", file=sys.stderr)
+                    
+                    # Debug logging for Messages API output
+                    if debug:
+                        output_length = len(text)
+                        estimated_output_tokens = output_length // 4
+                        print(f"__ LLM Debug: Output length: {output_length} chars (~{estimated_output_tokens} tokens)", file=sys.stderr)
+                        if hasattr(resp_msg, 'stop_reason'):
+                            print(f"__ LLM Debug: Stop reason: {resp_msg.stop_reason}", file=sys.stderr)
+                    
                     return text
                 except Exception:
                     return str(resp_msg)
