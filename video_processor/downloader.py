@@ -10,8 +10,9 @@ import subprocess
 import shutil
 import re
 from pathlib import Path
+from datetime import datetime
 
-def download_srt(url: str, debug: bool = False) -> str:
+def download_srt(url: str, debug: bool = False, backend: str = 'default', model: str = 'default') -> str:
     """
     Download English subtitles for a YouTube URL, preferring creator-provided subs and
     falling back to auto-generated. Returns the SRT content as a string.
@@ -117,7 +118,11 @@ def download_srt(url: str, debug: bool = False) -> str:
                     # Use same slugification as MD files
                     slug = re.sub(r"[^\w\s-]", "", video_title).strip()
                     slug = re.sub(r"[\s_-]+", "-", slug)
-                    debug_srt_path = Path.cwd() / f"{slug}.srt"
+                    # Add timestamp suffix to SRT files using global timestamp
+                    from .cli import get_global_timestamp
+                    timestamp = get_global_timestamp()
+                    timestamp_suffix = f"_{backend}_{model}_{timestamp}"
+                    debug_srt_path = Path.cwd() / f"{slug}{timestamp_suffix}.srt"
                     debug_srt_path.write_text(srt_content, encoding='utf-8')
                     print(f"__ Saved SRT file to {debug_srt_path}", file=sys.stderr)
                 

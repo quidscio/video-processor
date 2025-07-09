@@ -8,7 +8,10 @@ import os
 import subprocess
 import re
 import shutil
+import time
+import glob
 from pathlib import Path
+from datetime import datetime
 import importlib.resources as pkg_resources
 from .config import WHISPER_MODEL
 
@@ -18,6 +21,21 @@ try:
     _pkg_version = version("video-processor")
 except Exception:
     _pkg_version = "dev"
+
+# Global timestamp for consistent naming across all artifacts
+_global_timestamp = None
+
+def get_global_timestamp() -> str:
+    """Get the global timestamp for this execution (set once at start)"""
+    global _global_timestamp
+    if _global_timestamp is None:
+        _global_timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    return _global_timestamp
+
+def generate_timestamp_suffix(backend: str, model: str) -> str:
+    """Generate timestamp suffix using global timestamp: _backend_model_yyyymmdd-hhmmss"""
+    timestamp = get_global_timestamp()
+    return f"_{backend}_{model}_{timestamp}"
 
 # Custom command class to include version header in help output
 class VersionedHelpCommand(click.Command):
@@ -109,13 +127,14 @@ def main(
     """
     Transcribe and summarize a video/audio SOURCE (file path or YouTube URL) in Markdown.
     """
-    # Program start banner
+    # Program start banner with timestamp
     try:
         from importlib.metadata import version
         ver = version("video-processor")
     except Exception:
         ver = "dev"
-    click.echo(f"== Video Processor {ver} ==")
+    timestamp = get_global_timestamp()
+    click.echo(f"== Video Processor {ver} {timestamp} ==")
 
     # Bootstrap project-local config and symlink into user XDG config area
     if init_config:
@@ -157,6 +176,14 @@ def main(
     if source is None:
         raise click.UsageError("Missing argument 'SOURCE'.")
 
+    # Determine which backend to use (CLI flag overrides project config)
+    from .config import BACKEND as CONFIG_BACKEND
+    if backend:
+        os.environ['LLM_BACKEND'] = backend
+        backend_used = backend
+    else:
+        backend_used = CONFIG_BACKEND
+
     if youtube:
         click.echo(f".. Seeking subtitles for {source}")
         if download_video:
@@ -172,39 +199,58 @@ def main(
             if title:
                 slug = re.sub(r"[^\w\s-]", "", title).strip()
                 slug = re.sub(r"[\s_-]+", "-", slug)
-                out_template = f"{slug}.%(ext)s"
+                # Add timestamp suffix to video files
+                timestamp_suffix = generate_timestamp_suffix(backend_used, llm_model)
+                out_template = f"{slug}{timestamp_suffix}.%(ext)s"
             else:
-                out_template = "%(id)s.%(ext)s"
+                # Add timestamp suffix to video files
+                timestamp_suffix = generate_timestamp_suffix(backend_used, llm_model)
+                out_template = f"%(id)s{timestamp_suffix}.%(ext)s"
             cmd_vid = ["yt-dlp"]
             if not debug:
                 cmd_vid += ["-q", "--no-warnings"]
-            cmd_vid += ["-o", out_template, source]
+            # Select best single file format (highest resolution)
+            cmd_vid += ["-f", "best", "-o", out_template, source]
             if debug:
                 click.echo(f"__ Running video download: {' '.join(cmd_vid)}", err=True)
             try:
                 subprocess.run(cmd_vid, check=True)
+                # Update video file modification time to current time for proper sorting
+                # Find the downloaded video file(s) that match our pattern
+                if title:
+                    base_pattern = f"{slug}{timestamp_suffix}.*"
+                else:
+                    # Get video ID for fallback pattern
+                    try:
+                        video_id = subprocess.run(
+                            ["yt-dlp", "--get-id", "-q", source],
+                            check=True, capture_output=True, text=True
+                        ).stdout.strip()
+                        base_pattern = f"{video_id}{timestamp_suffix}.*"
+                    except Exception:
+                        base_pattern = f"*{timestamp_suffix}.*"
+                
+                # Find and update modification time of downloaded video files
+                current_time = time.time()
+                for video_file in glob.glob(base_pattern):
+                    if os.path.isfile(video_file):
+                        os.utime(video_file, (current_time, current_time))
+                        if debug:
+                            click.echo(f"__ Updated modification time for {video_file}", err=True)
             except Exception as e:
                 raise click.ClickException(f"Error downloading video: {e}")
         from .downloader import download_srt
         try:
-            srt_text = download_srt(source, debug=debug)
+            srt_text = download_srt(source, debug=debug, backend=backend_used, model=llm_model)
         except RuntimeError as err:
             raise click.ClickException(str(err))
     else:
         from .converter import transcribe_to_srt
 
-        srt_text = transcribe_to_srt(source, whisper_model, debug=debug)
+        srt_text = transcribe_to_srt(source, whisper_model, debug=debug, backend=backend_used, model=llm_model)
 
     from .srt_parser import srt_to_timestamped_lines
     from .llm_client import load_template, chat
-    from .config import BACKEND as CONFIG_BACKEND
-
-    # Determine which backend to use (CLI flag overrides project config)
-    if backend:
-        os.environ['LLM_BACKEND'] = backend
-        backend_used = backend
-    else:
-        backend_used = CONFIG_BACKEND
 
     # CLI override for Ollama host: normalize and override config/env and llm_client
     if ollama_host:
@@ -287,9 +333,15 @@ def main(
                 title = os.path.splitext(os.path.basename(source))[0]
             slug = re.sub(r"[^\w\s-]", "", title).strip()
             slug = re.sub(r"[\s_-]+", "-", slug)
-            filename = slug + ".md"
+            # Add timestamp suffix to MD files
+            timestamp_suffix = generate_timestamp_suffix(backend_used, llm_model)
+            filename = slug + timestamp_suffix + ".md"
         else:
-            filename = output
+            # Add timestamp suffix to custom output filename
+            base_name = os.path.splitext(output)[0]
+            ext = os.path.splitext(output)[1] or ".md"
+            timestamp_suffix = generate_timestamp_suffix(backend_used, llm_model)
+            filename = base_name + timestamp_suffix + ext
         # Write summary to file, warning if overwriting
         existed = os.path.exists(filename)
         with open(filename, 'w', encoding='utf-8') as f:

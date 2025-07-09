@@ -30,6 +30,8 @@ def transcribe_to_srt(
     input_path: str,
     model_name: str = WHISPER_MODEL,
     debug: bool = False,
+    backend: str = 'default',
+    model: str = 'default',
 ) -> str:
     """
     Transcribe the given media file and return an SRT-formatted string.
@@ -40,7 +42,8 @@ def transcribe_to_srt(
             "ffmpeg not found in PATH; please install ffmpeg for transcription"
         )
     # Timestamp prefix for debug artifacts and sanitize basename for debug files
-    ts = datetime.now().strftime("%Y%m%d_%H%M%S") if debug else None
+    from .cli import get_global_timestamp
+    ts = get_global_timestamp().replace("-", "_") if debug else None
     raw_stem = Path(input_path).stem
     if debug:
         # slugify stem: remove invalid chars and replace spaces/underscores with hyphens
@@ -121,8 +124,10 @@ def transcribe_to_srt(
         subtitles.append(subtitle)
     srt_text = srt.compose(subtitles)
     if debug:
-        # save SRT for debugging
-        srt_file = Path.cwd() / f"{ts}_{stem}.srt"
+        # save SRT for debugging with timestamp suffix using global timestamp
+        timestamp = get_global_timestamp()
+        timestamp_suffix = f"_{backend}_{model}_{timestamp}"
+        srt_file = Path.cwd() / f"{stem}{timestamp_suffix}.srt"
         srt_file.write_text(srt_text, encoding='utf-8')
         print(f"__ Saved intermediate SRT to {srt_file}")
     return srt_text
