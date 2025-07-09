@@ -33,10 +33,54 @@ def get_global_timestamp() -> str:
         _global_timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     return _global_timestamp
 
+def slugify_filename_component(text: str) -> str:
+    """
+    Slugify text for safe use in filenames.
+    Based on filerenamer approach: replace problematic chars with safe alternatives.
+    """
+    if not text:
+        return ""
+    
+    # Replace common problematic characters with safe alternatives
+    replacements = {
+        '/': '-',
+        '\\': '-',
+        ':': '-',
+        '*': '-',
+        '?': '-',
+        '"': '',
+        '<': '-',
+        '>': '-',
+        '|': '-',
+        ' ': '-',
+        '\t': '-',
+        '\n': '-',
+        '\r': '-',
+    }
+    
+    result = text
+    for old_char, new_char in replacements.items():
+        result = result.replace(old_char, new_char)
+    
+    # Remove any remaining non-printable characters
+    result = ''.join(char for char in result if char.isprintable())
+    
+    # Collapse multiple consecutive hyphens into single hyphens
+    while '--' in result:
+        result = result.replace('--', '-')
+    
+    # Remove leading/trailing hyphens
+    result = result.strip('-')
+    
+    return result
+
 def generate_timestamp_suffix(backend: str, model: str) -> str:
     """Generate timestamp suffix using global timestamp: _backend_model_yyyymmdd-hhmmss"""
     timestamp = get_global_timestamp()
-    return f"_{backend}_{model}_{timestamp}"
+    # Slugify backend and model names for safe filename use
+    safe_backend = slugify_filename_component(backend)
+    safe_model = slugify_filename_component(model)
+    return f"_{safe_backend}_{safe_model}_{timestamp}"
 
 # Custom command class to include version header in help output
 class VersionedHelpCommand(click.Command):

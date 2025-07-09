@@ -59,11 +59,20 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, de
                 prompt=full_prompt,
                 temperature=temperature,
                 max_tokens_to_sample=max_tokens,
+                stream=True,
             )
+            # Handle streaming response
+            completion = ""
+            stop_reason = None
+            for chunk in response:
+                if hasattr(chunk, 'completion'):
+                    completion += chunk.completion
+                if hasattr(chunk, 'stop_reason'):
+                    stop_reason = chunk.stop_reason
+            
             # Check for token limit issues
-            completion = response.completion
             was_truncated = False
-            if hasattr(response, 'stop_reason') and response.stop_reason == 'max_tokens':
+            if stop_reason == 'max_tokens':
                 print(f"** ERROR: Output truncated due to OUTPUT token limit ({max_tokens} tokens reached)", file=sys.stderr)
                 was_truncated = True
             
@@ -72,8 +81,8 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, de
                 output_length = len(completion)
                 estimated_output_tokens = output_length // 4
                 print(f"__ LLM Debug: Output length: {output_length} chars (~{estimated_output_tokens} tokens)", file=sys.stderr)
-                if hasattr(response, 'stop_reason'):
-                    print(f"__ LLM Debug: Stop reason: {response.stop_reason}", file=sys.stderr)
+                if stop_reason:
+                    print(f"__ LLM Debug: Stop reason: {stop_reason}", file=sys.stderr)
             
             return completion, was_truncated
         except Exception as e:
@@ -89,19 +98,23 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, de
                     messages=messages_payload,
                     temperature=temperature,
                     max_tokens=max_tokens,
+                    stream=True,
                 )
-                # Extract and concatenate text blocks from the response
+                # Handle streaming Messages API response
                 try:
-                    blocks = resp_msg.content
                     text = ''
-                    for block in blocks:
-                        # Each block has .text for text content
-                        if hasattr(block, 'text'):
-                            text += block.text
+                    stop_reason = None
+                    for chunk in resp_msg:
+                        if hasattr(chunk, 'delta') and hasattr(chunk.delta, 'text'):
+                            text += chunk.delta.text
+                        elif hasattr(chunk, 'message') and hasattr(chunk.message, 'stop_reason'):
+                            stop_reason = chunk.message.stop_reason
+                        elif hasattr(chunk, 'stop_reason'):
+                            stop_reason = chunk.stop_reason
                     
                     # Check for token limit issues in Messages API
                     was_truncated = False
-                    if hasattr(resp_msg, 'stop_reason') and resp_msg.stop_reason == 'max_tokens':
+                    if stop_reason == 'max_tokens':
                         print(f"** ERROR: Output truncated due to OUTPUT token limit ({max_tokens} tokens reached)", file=sys.stderr)
                         was_truncated = True
                     
@@ -110,8 +123,8 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, de
                         output_length = len(text)
                         estimated_output_tokens = output_length // 4
                         print(f"__ LLM Debug: Output length: {output_length} chars (~{estimated_output_tokens} tokens)", file=sys.stderr)
-                        if hasattr(resp_msg, 'stop_reason'):
-                            print(f"__ LLM Debug: Stop reason: {resp_msg.stop_reason}", file=sys.stderr)
+                        if stop_reason:
+                            print(f"__ LLM Debug: Stop reason: {stop_reason}", file=sys.stderr)
                     
                     return text, was_truncated
                 except Exception:

@@ -119,9 +119,8 @@ def download_srt(url: str, debug: bool = False, backend: str = 'default', model:
                     slug = re.sub(r"[^\w\s-]", "", video_title).strip()
                     slug = re.sub(r"[\s_-]+", "-", slug)
                     # Add timestamp suffix to SRT files using global timestamp
-                    from .cli import get_global_timestamp
-                    timestamp = get_global_timestamp()
-                    timestamp_suffix = f"_{backend}_{model}_{timestamp}"
+                    from .cli import generate_timestamp_suffix
+                    timestamp_suffix = generate_timestamp_suffix(backend, model)
                     debug_srt_path = Path.cwd() / f"{slug}{timestamp_suffix}.srt"
                     debug_srt_path.write_text(srt_content, encoding='utf-8')
                     print(f"__ Saved SRT file to {debug_srt_path}", file=sys.stderr)
