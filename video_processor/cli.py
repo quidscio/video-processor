@@ -209,8 +209,8 @@ def main(
             cmd_vid = ["yt-dlp"]
             if not debug:
                 cmd_vid += ["-q", "--no-warnings"]
-            # Select best single file format (highest resolution)
-            cmd_vid += ["-f", "best", "-o", out_template, source]
+            # Select best single file format (highest resolution) - use "b" to suppress warning
+            cmd_vid += ["-f", "b", "-o", out_template, source]
             if debug:
                 click.echo(f"__ Running video download: {' '.join(cmd_vid)}", err=True)
             try:
