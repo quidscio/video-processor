@@ -5,6 +5,7 @@ Command-line interface for video-processor.
 """
 import click
 import os
+import sys
 import subprocess
 import re
 import shutil
@@ -274,9 +275,14 @@ def main(
     timestamped = srt_to_timestamped_lines(srt_text)
     template = load_template("transcribe.tpl")
     prompt = template.replace("{{ transcript }}", timestamped)
+    # Track if any errors occurred during processing
+    has_errors = False
+    
     try:
         click.echo(f".. Sending prompt to LLM backend ({backend_used}), model={llm_model}, temp={temperature}, max_tokens={token_limit}")
-        md = chat(prompt, model=llm_model, temperature=temperature, debug=debug, max_tokens=token_limit)
+        md, was_truncated = chat(prompt, model=llm_model, temperature=temperature, debug=debug, max_tokens=token_limit)
+        if was_truncated:
+            has_errors = True
         click.echo(f".. Received result from LLM (length={len(md)} chars)")
     except Exception as e:
         # Provide a clearer error if the Ollama server returns HTTP errors or is unreachable
@@ -358,6 +364,10 @@ def main(
             click.echo(f".. Summarization written to {filename}")
     else:
         click.echo(md)
+    
+    # Exit with non-zero code if any errors occurred during processing
+    if has_errors:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -18,11 +18,14 @@ def load_template(name: str) -> str:
     with open(path, encoding='utf-8') as f:
         return f.read()
 
-def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, debug: bool = False, max_tokens: int = 10000) -> str:
+def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, debug: bool = False, max_tokens: int = 10000) -> tuple[str, bool]:
     """
     Send a user prompt to the selected LLM backend and return the content.
     Supported backends: Ollama (default), Anthropic Cloud.
     The backend is selected via the project config or LLM_BACKEND env var.
+    
+    Returns:
+        tuple[str, bool]: (response_content, was_truncated)
     """
     # Select LLM backend (CLI env override, then project config)
     backend = os.getenv('LLM_BACKEND', CONFIG_BACKEND).lower()
@@ -59,8 +62,10 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, de
             )
             # Check for token limit issues
             completion = response.completion
+            was_truncated = False
             if hasattr(response, 'stop_reason') and response.stop_reason == 'max_tokens':
                 print(f"** ERROR: Output truncated due to OUTPUT token limit ({max_tokens} tokens reached)", file=sys.stderr)
+                was_truncated = True
             
             # Debug logging for output
             if debug:
@@ -70,7 +75,7 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, de
                 if hasattr(response, 'stop_reason'):
                     print(f"__ LLM Debug: Stop reason: {response.stop_reason}", file=sys.stderr)
             
-            return completion
+            return completion, was_truncated
         except Exception as e:
             err = str(e)
             # Check for token limit errors
@@ -95,8 +100,10 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, de
                             text += block.text
                     
                     # Check for token limit issues in Messages API
+                    was_truncated = False
                     if hasattr(resp_msg, 'stop_reason') and resp_msg.stop_reason == 'max_tokens':
                         print(f"** ERROR: Output truncated due to OUTPUT token limit ({max_tokens} tokens reached)", file=sys.stderr)
+                        was_truncated = True
                     
                     # Debug logging for Messages API output
                     if debug:
@@ -106,9 +113,9 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, de
                         if hasattr(resp_msg, 'stop_reason'):
                             print(f"__ LLM Debug: Stop reason: {resp_msg.stop_reason}", file=sys.stderr)
                     
-                    return text
+                    return text, was_truncated
                 except Exception:
-                    return str(resp_msg)
+                    return str(resp_msg), False
             raise
 
     # Default to Ollama HTTP API
@@ -122,6 +129,6 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, de
     resp.raise_for_status()
     data = resp.json()
     try:
-        return data['choices'][0]['message']['content']
+        return data['choices'][0]['message']['content'], False
     except Exception:
         raise RuntimeError(f"Unexpected response format from LLM: {data}")
