@@ -8,6 +8,8 @@ import sys
 import tempfile
 import subprocess
 import shutil
+import re
+from pathlib import Path
 
 def download_srt(url: str, debug: bool = False) -> str:
     """
@@ -23,6 +25,25 @@ def download_srt(url: str, debug: bool = False) -> str:
     # Create temporary output directory (auto-cleaned below)
     output_dir = tempfile.mkdtemp(prefix="vpdl-")
     base_output = os.path.join(output_dir, "%(id)s.%(ext)s")
+    
+    # For debug mode, get video info for proper filename formatting
+    video_id = None
+    video_title = None
+    if debug:
+        try:
+            # Get video ID
+            video_id = subprocess.run(
+                ["yt-dlp", "--get-id", "-q", url],
+                check=True, capture_output=True, text=True
+            ).stdout.strip()
+            # Get video title
+            video_title = subprocess.run(
+                ["yt-dlp", "--get-title", "-q", url],
+                check=True, capture_output=True, text=True
+            ).stdout.strip()
+        except Exception:
+            pass
+    
     try:
         # Creator-provided subtitles
         cmd = [
@@ -33,7 +54,13 @@ def download_srt(url: str, debug: bool = False) -> str:
             url,
         ]
         if debug:
-            print(f"__ Running creator subtitles extraction: {' '.join(cmd)}", file=sys.stderr)
+            # Create executable command with variable substitution
+            exec_cmd = cmd.copy()
+            if video_id:
+                for i, arg in enumerate(exec_cmd):
+                    if arg == base_output:
+                        exec_cmd[i] = os.path.join(output_dir, f"{video_id}.srt")
+            print(f"__ Running creator subtitles extraction: {' '.join(exec_cmd)}", file=sys.stderr)
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
         # If none, fallback to auto-generated subtitles
@@ -49,7 +76,13 @@ def download_srt(url: str, debug: bool = False) -> str:
                 url,
             ]
             if debug:
-                print(f"__ Running auto subtitles extraction: {' '.join(cmd_auto)}", file=sys.stderr)
+                # Create executable command with variable substitution
+                exec_cmd_auto = cmd_auto.copy()
+                if video_id:
+                    for i, arg in enumerate(exec_cmd_auto):
+                        if arg == base_output:
+                            exec_cmd_auto[i] = os.path.join(output_dir, f"{video_id}.en.srt")
+                print(f"__ Running auto subtitles extraction: {' '.join(exec_cmd_auto)}", file=sys.stderr)
             subprocess.run(cmd_auto, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             # Note where file is written (VTT -> SRT conversion)
             if debug:
@@ -74,8 +107,21 @@ def download_srt(url: str, debug: bool = False) -> str:
                 else:
                     hr = f"{n:.2f}TiB"
                 print(f".. Received subtitles ({hr})", file=sys.stderr)
+                
+                # Read SRT content
                 with open(path, encoding='utf-8') as f:
-                    return f.read()
+                    srt_content = f.read()
+                
+                # In debug mode, persist SRT file with proper filename formatting
+                if debug and video_title:
+                    # Use same slugification as MD files
+                    slug = re.sub(r"[^\w\s-]", "", video_title).strip()
+                    slug = re.sub(r"[\s_-]+", "-", slug)
+                    debug_srt_path = Path.cwd() / f"{slug}.srt"
+                    debug_srt_path.write_text(srt_content, encoding='utf-8')
+                    print(f"__ Saved SRT file to {debug_srt_path}", file=sys.stderr)
+                
+                return srt_content
         raise RuntimeError(
             f"No SRT file found in {output_dir}: yt-dlp did not produce any .srt."
         )
