@@ -153,3 +153,45 @@ ____ Writing subtitles to file []
 video-processor -o= -w medium -b ollama -l deepseek-r1:7b  -y https://www.youtube.com/watch?v=VIDEO
 video-processor -o= -w medium -b anthropic -l claude-opus-4-20250514     -y https://www.youtube.com/watch?v=VIDEO
 ```
+
+### Model Price Comparison and Effectiveness Prediction 
+
+[ChatGPT Link (private)](https://chatgpt.com/g/g-p-686a9bb5e49c8191a7e2969739b3e334-ai/c/686f1420-a0bc-800c-a74b-0ac44ec12a92) 
+
+🔁 Normalized Cost and Ranking Prediction Table
+
+| Model             | Input Norm | Output Norm | Summary Rank |
+| ----------------- | ---------- | ----------- | ------------ |
+| Claude Opus 4     | 5.00       | 5.00        | **1**        |
+| Claude Sonnet 4   | 1.00       | 1.00        | **2**        |
+| GPT‑4.1           | 0.67       | 0.53        | **3**        |
+| GPT‑4o            | 1.67       | 1.33        | **4**        |
+| o4‑mini           | 0.37       | 0.29        | **5** (tie)  |
+| GPT‑4o‑mini       | 0.20       | 0.16        | **5** (tie)  |
+| Codex‑mini‑latest | 0.50       | 0.40        | **6** (tie)  |
+| GPT‑4.1‑mini      | 0.13       | 0.11        | **6** (tie)  |
+| o3                | 0.67       | 0.53        | **6** (tie)  |
+
+📊 Raw Cost Table
+
+| Model             | Input (\$/M tok) | Output (\$/M tok) |
+| ----------------- | ---------------- | ----------------- |
+| GPT‑4.1           | 2.00             | 8.00              |
+| GPT‑4.1‑mini      | 0.40             | 1.60              |
+| GPT‑4o            | 5.00             | 20.00             |
+| GPT‑4o‑mini       | 0.60             | 2.40              |
+| o3                | 2.00             | 8.00              |
+| o4‑mini           | 1.10             | 4.40              |
+| Codex‑mini‑latest | 1.50             | 6.00              |
+| Opus 4            | 15.00            | 75.00             |
+| Sonnet 4          | 3.00             | 15.00             |
+
+Interesting to note, between the Anthropic models, Sonnet is actually superior. 
+
+Models to try after Sonnet 4: 
+
+gpt-4.1-2025-04-14
+gpt-4.1-mini-2025-04-14
+gpt-4o-mini-2024-07-18
+o3-2025-04-16
+o4-mini-2025-04-16
