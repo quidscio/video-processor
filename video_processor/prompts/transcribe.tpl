@@ -16,7 +16,8 @@ Second section, "# Executive Summary"
 4. Then include a "## Action Items" section listing any action items mentioned as bullet points. If there are none, write "None.".
 
 
-When you are done, confirm that each directive above has been followed and redo if not. 
+When you are done, confirm to yourself that each directive above has been followed and redo if not. 
+DO NOT PRINT YOUR CONFIRMATION IN THE OUTPUT. SIMPLY AND SILENTLY PERFORM THE CONFIRMATION. 
 
 Here is the transcript:
 {{ transcript }}

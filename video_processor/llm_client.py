@@ -21,7 +21,7 @@ def load_template(name: str) -> str:
 def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, debug: bool = False, max_tokens: int = 10000) -> tuple[str, bool]:
     """
     Send a user prompt to the selected LLM backend and return the content.
-    Supported backends: Ollama (default), Anthropic Cloud.
+    Supported backends: Ollama (default), Anthropic Cloud, OpenAI.
     The backend is selected via the project config or LLM_BACKEND env var.
     
     Returns:
@@ -130,6 +130,109 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, de
                 except Exception:
                     return str(resp_msg), False
             raise
+
+    if backend == 'openai':
+        # OpenAI API implementation
+        api_key = os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            raise RuntimeError('OPENAI_API_KEY is not set')
+        
+        # Get base URL from config or use default
+        # Load config similar to how config.py does it
+        try:
+            import tomllib
+        except ModuleNotFoundError:
+            import tomli as tomllib
+        
+        # Load config from project-local config.toml if it exists
+        config = {}
+        from pathlib import Path
+        config_path = Path.cwd() / "config.toml"
+        if config_path.exists():
+            with open(config_path, "rb") as f:
+                config = tomllib.load(f)
+        
+        base_url = config.get('openai_base_url', 'https://api.openai.com/v1')
+        
+        # Use API key from config if available, otherwise use environment variable
+        config_api_key = config.get('openai_api_key')
+        if config_api_key:
+            api_key = config_api_key
+        
+        url = f"{base_url}/chat/completions"
+        headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json'
+        }
+        
+        payload = {
+            'model': model,
+            'messages': [{'role': 'user', 'content': prompt}],
+        }
+        
+        # Some newer models (like o4-mini, o3) have specific requirements
+        if model.startswith(('o3-', 'o4-')):
+            payload['max_completion_tokens'] = max_tokens
+            # These models only support temperature=1 (default)
+            if temperature != 1.0:
+                if debug:
+                    print(f"__ LLM Debug: Model {model} only supports temperature=1, ignoring temperature={temperature}", file=sys.stderr)
+        else:
+            payload['max_tokens'] = max_tokens
+            payload['temperature'] = temperature
+        
+        try:
+            resp = requests.post(url, json=payload, headers=headers)
+            resp.raise_for_status()
+            data = resp.json()
+            
+            # Extract response content
+            content = data['choices'][0]['message']['content']
+            
+            # Check for truncation
+            was_truncated = False
+            finish_reason = data['choices'][0].get('finish_reason', '')
+            if finish_reason == 'length':
+                # For reasoning models, check if completion tokens were used for reasoning
+                usage = data.get('usage', {})
+                completion_details = usage.get('completion_tokens_details', {})
+                reasoning_tokens = completion_details.get('reasoning_tokens', 0)
+                if reasoning_tokens > 0:
+                    print(f"** ERROR: Output truncated due to reasoning token limit ({reasoning_tokens} reasoning tokens used)", file=sys.stderr)
+                else:
+                    print(f"** ERROR: Output truncated due to OUTPUT token limit ({max_tokens} tokens reached)", file=sys.stderr)
+                was_truncated = True
+            
+            # Debug logging for OpenAI output
+            if debug:
+                usage = data.get('usage', {})
+                print(f"__ LLM Debug: OpenAI usage: {usage}", file=sys.stderr)
+                output_length = len(content)
+                print(f"__ LLM Debug: Output length: {output_length} chars", file=sys.stderr)
+                print(f"__ LLM Debug: Finish reason: {finish_reason}", file=sys.stderr)
+            
+            return content, was_truncated
+            
+        except requests.exceptions.HTTPError as e:
+            # Handle OpenAI-specific errors
+            if e.response.status_code == 401:
+                raise RuntimeError("OpenAI API key is invalid or expired")
+            elif e.response.status_code == 429:
+                raise RuntimeError("OpenAI API rate limit exceeded")
+            elif e.response.status_code == 404:
+                raise RuntimeError(f"OpenAI model '{model}' not found or not available")
+            else:
+                try:
+                    error_data = e.response.json()
+                    error_msg = error_data.get('error', {}).get('message', str(e))
+                    raise RuntimeError(f"OpenAI API error: {error_msg}")
+                except:
+                    raise RuntimeError(f"OpenAI API error: {e}")
+        except Exception as e:
+            err = str(e)
+            if 'token' in err.lower() and ('limit' in err.lower() or 'exceeded' in err.lower()):
+                raise RuntimeError(f"Token limit exceeded: {err}. Consider reducing transcript length or increasing token limit.")
+            raise RuntimeError(f"OpenAI API error: {err}")
 
     # Default to Ollama HTTP API
     url = f"{OLLAMA_URL}/v1/chat/completions"

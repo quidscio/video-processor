@@ -97,6 +97,9 @@ class VersionedHelpCommand(click.Command):
         formatter.write_text(
             "  video-processor -o= -w medium -b anthropic -l claude-opus-4-20250514 -d -y https://www.youtube.com/watch?v=VIDEO"
         )
+        formatter.write_text(
+            "  video-processor -o= -w medium -b openai -l o4-mini-2025-04-16 -d -y https://www.youtube.com/watch?v=VIDEO"
+        )
 
 
 @click.command(cls=VersionedHelpCommand)
@@ -137,8 +140,8 @@ class VersionedHelpCommand(click.Command):
 )
 @click.option(
     "-b", "--backend",
-    type=click.Choice(['ollama', 'anthropic']),
-    help="One-off override for LLM backend (ollama or anthropic)."
+    type=click.Choice(['ollama', 'anthropic', 'openai']),
+    help="One-off override for LLM backend (ollama, anthropic, or openai)."
 )
 @click.option(
     "--ollama-host",
@@ -354,6 +357,11 @@ def main(
                         f"Model '{model_name}' not found on Anthropic Cloud."
                         " Please use a valid Anthropic model name, e.g. claude-2, claude-2.1, claude-2-instant, or claude-3."
                     )
+                elif backend == 'openai':
+                    raise click.ClickException(
+                        f"Model '{model_name}' not found on OpenAI."
+                        " Please use a valid OpenAI model name, e.g. gpt-4, gpt-4-turbo, gpt-3.5-turbo, o4-mini-2025-04-16."
+                    )
                 raise click.ClickException(
                     f"Model '{model_name}' not found on Ollama server."
                     f"\nPlease pull it first: `ollama pull {model_name}`"
@@ -372,9 +380,14 @@ def main(
                 "ANTHROPIC_API_KEY is not set; please export your Anthropic API key, e.g.:\n"
                 "  export ANTHROPIC_API_KEY=your_api_key_here"
             )
+        if 'OPENAI_API_KEY is not set' in msg:
+            raise click.ClickException(
+                "OPENAI_API_KEY is not set; please export your OpenAI API key, e.g.:\n"
+                "  export OPENAI_API_KEY=your_api_key_here"
+            )
         raise click.ClickException(
             f"Error during chat completion: {msg}\n"
-            "Ensure your LLM backend is configured correctly (check LLM_BACKEND, OLLAMA_URL, ANTHROPIC_API_KEY)."
+            "Ensure your LLM backend is configured correctly (check LLM_BACKEND, OLLAMA_URL, ANTHROPIC_API_KEY, OPENAI_API_KEY)."
         )
     # Handle output: write to file if requested, else print to stdout
     if output is not None:

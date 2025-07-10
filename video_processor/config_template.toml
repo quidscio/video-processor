@@ -1,9 +1,13 @@
-# Default LLM backend: "ollama" or "anthropic"
+# Default LLM backend: "ollama", "anthropic", or "openai"
 backend = "ollama"
 
 # Ollama server host (host[:port], defaults to port 11434)
 # On WSL, host will be IP of Windows host. Firewall must be set per README
 ollama_host = "localhost:11434"
+
+# OpenAI settings (optional, defaults to OPENAI_API_KEY environment variable)
+# openai_api_key = "your_api_key_here"
+# openai_base_url = "https://api.openai.com/v1"  # Custom endpoint if needed
 
 # Whisper defaults:
 whisper_model = "base"

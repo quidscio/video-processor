@@ -195,3 +195,22 @@ gpt-4.1-mini-2025-04-14
 gpt-4o-mini-2024-07-18
 o3-2025-04-16
 o4-mini-2025-04-16
+
+#### Overall Effectiveness and Cost Ranking 
+
+| Model               | Input norm | Output norm | Rank (Group 1)        |
+|---------------------|------------|-------------|------------------------|
+| o3                  | 1.82       | 1.82        | 1                      |
+| Opus 4              | 13.64      | 17.05       | 2                      |
+| o4‑mini             | 1.00       | 1.00        | 3                      |
+| GPT‑4.1             | 1.82       | 1.82        | 4                      |
+| GPT‑4.1‑mini        | 0.36       | 0.36        | 5                      |
+| Sonnet 4            | 2.73       | 3.41        | 6                      |
+| GPT‑4o              | 4.55       | 4.55        | (Not in Group 1)       |
+| GPT‑4o‑mini         | 0.55       | 0.55        | (Not in Group 1)       |
+| Codex‑mini‑latest   | 1.36       | 1.36        | (Not in Group 1)       |
+
+From this table and experience, perform a close analysis of: 
+* Sonnet 4: the previous winner 
+* o4-mini: performs well in page-summary tool 
+* gpt-4.1-mini: scored close to o4-mini and is 1/3 the cost
