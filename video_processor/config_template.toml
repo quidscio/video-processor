@@ -12,3 +12,7 @@ ollama_host = "localhost:11434"
 # Whisper defaults:
 whisper_model = "base"
 device        = "cuda"  # or "cpu"
+
+# LLM defaults:
+model = "claude-opus-4"  # Default LLM model name
+token_limit = 10000      # Maximum output tokens for LLM response

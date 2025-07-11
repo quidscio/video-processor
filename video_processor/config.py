@@ -64,3 +64,8 @@ OLLAMA_URL = _raw
 WHISPER_MODEL = os.getenv("WHISPER_MODEL", _cfg.get("whisper_model", "base"))
 # Device for Whisper (e.g. 'cuda' or 'cpu')
 DEVICE = os.getenv("DEVICE", _cfg.get("device", "cuda"))
+
+# LLM model name
+MODEL = os.getenv("LLM_MODEL", _cfg.get("model", "claude-opus-4"))
+# Token limit for LLM
+TOKEN_LIMIT = int(os.getenv("TOKEN_LIMIT", _cfg.get("token_limit", 10000)))

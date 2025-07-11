@@ -14,7 +14,7 @@ import glob
 from pathlib import Path
 from datetime import datetime
 import importlib.resources as pkg_resources
-from .config import WHISPER_MODEL
+from .config import WHISPER_MODEL, MODEL, TOKEN_LIMIT
 
 # Package version for --version flag
 try:
@@ -125,7 +125,7 @@ class VersionedHelpCommand(click.Command):
 )
 @click.option(
     "-l", "--llm-model",
-    default="claude-opus-4", show_default=True,
+    default=MODEL, show_default=True,
     help="LLM model to use for summarization via Ollama."
 )
 @click.option(
@@ -135,7 +135,7 @@ class VersionedHelpCommand(click.Command):
 )
 @click.option(
     "--token-limit",
-    default=10000, show_default=True, type=int,
+    default=TOKEN_LIMIT, show_default=True, type=int,
     help="Maximum OUTPUT tokens for LLM response generation."
 )
 @click.option(
