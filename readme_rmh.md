@@ -77,6 +77,10 @@ Debug output should include:
     TODO: (in progress) Eliminate environment setting dependencies; anthropic backend, any others  
     TODO: Test approach to enable WSL to windows host for ollama server config  
     BUG: This must be specified in config and can't be via CLI, ollama_host = "192.168.1.68"
+07.10.25 OpenAI completed 
+    TODO: Fixup README.md 
+    TODO: Consider writeup including points to M
+    TODO: Do a program dataflow analysis & consider refactors or version on openrouter 
 
 #### Setup items 
 We want to make this configurable (video-processor.cfg) or via .env or via command line option 

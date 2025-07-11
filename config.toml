@@ -1,7 +1,8 @@
 # backend     = "ollama"
 ollama_host = "192.168.1.68"
 
-backend = "anthropic"  
+backend = "openai"
+model = "o4-mini" 
 
 # whisper_model = "small"
 # device        = "cpu"

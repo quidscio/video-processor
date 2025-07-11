@@ -126,7 +126,7 @@ def transcribe_to_srt(
     if debug:
         # save SRT for debugging with timestamp suffix using global timestamp
         from .cli import generate_timestamp_suffix
-        timestamp_suffix = generate_timestamp_suffix(backend, model)
+        timestamp_suffix = generate_timestamp_suffix(backend, model_name)
         srt_file = Path.cwd() / f"{stem}{timestamp_suffix}.srt"
         srt_file.write_text(srt_text, encoding='utf-8')
         print(f"__ Saved intermediate SRT to {srt_file}")
