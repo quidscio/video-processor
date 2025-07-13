@@ -98,13 +98,13 @@ def transcribe_to_srt(
             except Exception:
                 print("** Failed to get model parameters, using default device")
                 pass
-        print(f"__ Starting transcription of {tmp_wav.name}")
+        print(f".. Starting transcription of {tmp_wav.name}")
         result = model.transcribe(tmp_wav.name)
         # result = model.transcribe(tmp_wav.name, verbose=debug)
-        print(f"____ Transcription result length: {len(result)}")
+        if debug: print(f"____ Transcription result length: {len(result)}")
     finally:
-        print(f"__ Transcription complete")
         if debug:
+            print(f"__ Transcription complete")
             # preserve intermediate WAV for inspection
             dest = Path.cwd() / wav_name
             shutil.move(tmp_wav.name, dest)

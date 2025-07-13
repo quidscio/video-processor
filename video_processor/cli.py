@@ -189,6 +189,10 @@ def main(
         ver = "dev"
     timestamp = get_global_timestamp()
     click.echo(f"== Video Processor {ver} {timestamp} ==")
+    
+    # Log the command line execution
+    command_line = ' '.join(sys.argv)
+    click.echo(f".. Executing {command_line}")
 
     # Bootstrap project-local config and symlink into user XDG config area
     if init_config:

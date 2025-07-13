@@ -6,6 +6,8 @@ Wrapper for calling the Ollama chat completion API (Claude Opus 4).
 import os
 import sys
 import requests
+import time
+import random
 
 from .config import OLLAMA_URL, BACKEND as CONFIG_BACKEND
 
@@ -181,58 +183,84 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, de
             payload['max_tokens'] = max_tokens
             payload['temperature'] = temperature
         
-        try:
-            resp = requests.post(url, json=payload, headers=headers)
-            resp.raise_for_status()
-            data = resp.json()
-            
-            # Extract response content
-            content = data['choices'][0]['message']['content']
-            
-            # Check for truncation
-            was_truncated = False
-            finish_reason = data['choices'][0].get('finish_reason', '')
-            if finish_reason == 'length':
-                # For reasoning models, check if completion tokens were used for reasoning
-                usage = data.get('usage', {})
-                completion_details = usage.get('completion_tokens_details', {})
-                reasoning_tokens = completion_details.get('reasoning_tokens', 0)
-                if reasoning_tokens > 0:
-                    print(f"** ERROR: Output truncated due to reasoning token limit ({reasoning_tokens} reasoning tokens used)", file=sys.stderr)
+        # Retry logic for OpenAI API calls
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                resp = requests.post(url, json=payload, headers=headers, timeout=60)
+                resp.raise_for_status()
+                data = resp.json()
+                break
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code in [500, 502, 503, 504] and attempt < max_retries - 1:
+                    # Server errors - retry with exponential backoff
+                    wait_time = (2 ** attempt) + random.uniform(0, 1)
+                    if debug:
+                        print(f"__ LLM Debug: Server error {e.response.status_code}, retrying in {wait_time:.1f}s (attempt {attempt + 1}/{max_retries})", file=sys.stderr)
+                    time.sleep(wait_time)
+                    continue
                 else:
-                    print(f"** ERROR: Output truncated due to OUTPUT token limit ({max_tokens} tokens reached)", file=sys.stderr)
-                was_truncated = True
+                    # Client errors or max retries reached - format error message
+                    if e.response.status_code == 401:
+                        raise RuntimeError("** OpenAI API key is invalid or expired")
+                    elif e.response.status_code == 429:
+                        raise RuntimeError("** OpenAI API rate limit exceeded")
+                    elif e.response.status_code == 404:
+                        raise RuntimeError(f"** OpenAI model '{model}' not found or not available")
+                    else:
+                        try:
+                            error_data = e.response.json()
+                            error_msg = error_data.get('error', {}).get('message', str(e))
+                            raise RuntimeError(f"** OpenAI API error: {error_msg}")
+                        except:
+                            raise RuntimeError(f"** OpenAI API error: {e}")
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+                if attempt < max_retries - 1:
+                    # Network errors - retry with exponential backoff
+                    wait_time = (2 ** attempt) + random.uniform(0, 1)
+                    if debug:
+                        print(f"__ LLM Debug: Network error, retrying in {wait_time:.1f}s (attempt {attempt + 1}/{max_retries})", file=sys.stderr)
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    # Max retries reached
+                    raise RuntimeError(f"** OpenAI API connection failed after {max_retries} attempts: {e}")
+            except Exception as e:
+                # Other exceptions (JSON parsing, etc.)
+                err = str(e)
+                if 'token' in err.lower() and ('limit' in err.lower() or 'exceeded' in err.lower()):
+                    raise RuntimeError(f"** Token limit exceeded: {err}. Consider reducing transcript length or increasing token limit.")
+                raise RuntimeError(f"** OpenAI API error: {err}")
+        else:
+            # This should not happen, but just in case
+            raise RuntimeError("** OpenAI API call failed after all retry attempts")
             
-            # Debug logging for OpenAI output
-            if debug:
-                usage = data.get('usage', {})
-                print(f"__ LLM Debug: OpenAI usage: {usage}", file=sys.stderr)
-                output_length = len(content)
-                print(f"__ LLM Debug: Output length: {output_length} chars", file=sys.stderr)
-                print(f"__ LLM Debug: Finish reason: {finish_reason}", file=sys.stderr)
-            
-            return content, was_truncated
-            
-        except requests.exceptions.HTTPError as e:
-            # Handle OpenAI-specific errors
-            if e.response.status_code == 401:
-                raise RuntimeError("OpenAI API key is invalid or expired")
-            elif e.response.status_code == 429:
-                raise RuntimeError("OpenAI API rate limit exceeded")
-            elif e.response.status_code == 404:
-                raise RuntimeError(f"OpenAI model '{model}' not found or not available")
+        # Extract response content
+        content = data['choices'][0]['message']['content']
+        
+        # Check for truncation
+        was_truncated = False
+        finish_reason = data['choices'][0].get('finish_reason', '')
+        if finish_reason == 'length':
+            # For reasoning models, check if completion tokens were used for reasoning
+            usage = data.get('usage', {})
+            completion_details = usage.get('completion_tokens_details', {})
+            reasoning_tokens = completion_details.get('reasoning_tokens', 0)
+            if reasoning_tokens > 0:
+                print(f"** ERROR: Output truncated due to reasoning token limit ({reasoning_tokens} reasoning tokens used)", file=sys.stderr)
             else:
-                try:
-                    error_data = e.response.json()
-                    error_msg = error_data.get('error', {}).get('message', str(e))
-                    raise RuntimeError(f"OpenAI API error: {error_msg}")
-                except:
-                    raise RuntimeError(f"OpenAI API error: {e}")
-        except Exception as e:
-            err = str(e)
-            if 'token' in err.lower() and ('limit' in err.lower() or 'exceeded' in err.lower()):
-                raise RuntimeError(f"Token limit exceeded: {err}. Consider reducing transcript length or increasing token limit.")
-            raise RuntimeError(f"OpenAI API error: {err}")
+                print(f"** ERROR: Output truncated due to OUTPUT token limit ({max_tokens} tokens reached)", file=sys.stderr)
+            was_truncated = True
+        
+        # Debug logging for OpenAI output
+        if debug:
+            usage = data.get('usage', {})
+            print(f"__ LLM Debug: OpenAI usage: {usage}", file=sys.stderr)
+            output_length = len(content)
+            print(f"__ LLM Debug: Output length: {output_length} chars", file=sys.stderr)
+            print(f"__ LLM Debug: Finish reason: {finish_reason}", file=sys.stderr)
+        
+        return content, was_truncated
 
     # Default to Ollama HTTP API
     url = f"{OLLAMA_URL}/v1/chat/completions"
