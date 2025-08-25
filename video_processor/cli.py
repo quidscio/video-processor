@@ -248,21 +248,28 @@ def main(
             click.echo(f".. Downloading full video for {source}")
             # sanitize title for output basename (slugify like for SRT)
             try:
-                title = subprocess.run(
+                # Don't use check=True since yt-dlp may have warnings but still succeed
+                result = subprocess.run(
                     ["yt-dlp", "--get-title", "-q", source],
-                    check=True, capture_output=True, text=True
-                ).stdout.strip()
-            except Exception:
+                    capture_output=True, text=True
+                )
+                # Check if we got a title, regardless of return code (yt-dlp may return non-zero with warnings)
+                if result.stdout.strip():
+                    title = result.stdout.strip()
+                else:
+                    title = None
+            except Exception as e:
                 title = None
+                if debug:
+                    click.echo(f"__ Title extraction exception: {e}", err=True)
+            # Add timestamp suffix to video files
+            timestamp_suffix = generate_timestamp_suffix(backend_used, llm_model)
             if title:
-                slug = re.sub(r"[^\w\s-]", "", title).strip()
-                slug = re.sub(r"[\s_-]+", "-", slug)
-                # Add timestamp suffix to video files
-                timestamp_suffix = generate_timestamp_suffix(backend_used, llm_model)
+                # Use proper filename cleaning function
+                slug = slugify_filename_component(title)
                 out_template = f"{slug}{timestamp_suffix}.%(ext)s"
             else:
-                # Add timestamp suffix to video files
-                timestamp_suffix = generate_timestamp_suffix(backend_used, llm_model)
+                # Fallback to video ID if title extraction fails
                 out_template = f"%(id)s{timestamp_suffix}.%(ext)s"
             cmd_vid = ["yt-dlp"]
             if not debug:
@@ -270,12 +277,18 @@ def main(
             # Select best single file format (highest resolution) - use "b" to suppress warning
             cmd_vid += ["-f", "b", "-o", out_template, source]
             if debug:
-                click.echo(f"__ Running video download: {' '.join(cmd_vid)}", err=True)
+                # Show what template will be used 
+                if title:
+                    click.echo(f"__ Running video download with title '{title}': yt-dlp -f b -o {out_template} {source}", err=True)
+                else:
+                    click.echo(f"__ Running video download (title extraction failed): yt-dlp -f b -o {out_template} {source}", err=True)
             try:
                 subprocess.run(cmd_vid, check=True)
                 # Update video file modification time to current time for proper sorting
                 # Find the downloaded video file(s) that match our pattern
                 if title:
+                    # Use the same slug as above
+                    slug = slugify_filename_component(title)
                     base_pattern = f"{slug}{timestamp_suffix}.*"
                 else:
                     # Get video ID for fallback pattern
@@ -398,14 +411,20 @@ def main(
         # Determine filename: empty or '=' means auto-generate
         if output in ("", "="):
             try:
-                title = subprocess.run(
+                # Don't use check=True since yt-dlp may have warnings but still succeed
+                result = subprocess.run(
                     ["yt-dlp", "--get-title", "-q", source],
-                    check=True, capture_output=True, text=True
-                ).stdout.strip()
+                    capture_output=True, text=True
+                )
+                # Check if we got a title, regardless of return code (yt-dlp may return non-zero with warnings)
+                if result.stdout.strip():
+                    title = result.stdout.strip()
+                else:
+                    title = os.path.splitext(os.path.basename(source))[0]
             except Exception:
                 title = os.path.splitext(os.path.basename(source))[0]
-            slug = re.sub(r"[^\w\s-]", "", title).strip()
-            slug = re.sub(r"[\s_-]+", "-", slug)
+            # Use proper filename cleaning function
+            slug = slugify_filename_component(title)
             # Add timestamp suffix to MD files
             timestamp_suffix = generate_timestamp_suffix(backend_used, llm_model)
             filename = slug + timestamp_suffix + ".md"

@@ -32,16 +32,23 @@ def download_srt(url: str, debug: bool = False, backend: str = 'default', model:
     video_title = None
     if debug:
         try:
-            # Get video ID
-            video_id = subprocess.run(
+            # Get video ID - don't use check=True since yt-dlp may have warnings
+            id_result = subprocess.run(
                 ["yt-dlp", "--get-id", "-q", url],
-                check=True, capture_output=True, text=True
-            ).stdout.strip()
-            # Get video title
-            video_title = subprocess.run(
+                capture_output=True, text=True
+            )
+            # Check if we got a video ID, regardless of return code (yt-dlp may return non-zero with warnings)
+            if id_result.stdout.strip():
+                video_id = id_result.stdout.strip()
+            
+            # Get video title - don't use check=True since yt-dlp may have warnings  
+            title_result = subprocess.run(
                 ["yt-dlp", "--get-title", "-q", url],
-                check=True, capture_output=True, text=True
-            ).stdout.strip()
+                capture_output=True, text=True
+            )
+            # Check if we got a title, regardless of return code (yt-dlp may return non-zero with warnings)
+            if title_result.stdout.strip():
+                video_title = title_result.stdout.strip()
         except Exception:
             pass
     
@@ -130,8 +137,8 @@ def download_srt(url: str, debug: bool = False, backend: str = 'default', model:
                 # In debug mode, persist SRT file with proper filename formatting
                 if debug and video_title:
                     # Use same slugification as MD files
-                    slug = re.sub(r"[^\w\s-]", "", video_title).strip()
-                    slug = re.sub(r"[\s_-]+", "-", slug)
+                    from .cli import slugify_filename_component
+                    slug = slugify_filename_component(video_title)
                     # Add timestamp suffix to SRT files using global timestamp
                     from .cli import generate_timestamp_suffix
                     timestamp_suffix = generate_timestamp_suffix(backend, model)
