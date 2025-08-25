@@ -62,7 +62,14 @@ def download_srt(url: str, debug: bool = False, backend: str = 'default', model:
                     if arg == base_output:
                         exec_cmd[i] = os.path.join(output_dir, f"{video_id}.srt")
             print(f"__ Running creator subtitles extraction: {' '.join(exec_cmd)}", file=sys.stderr)
-        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        # Try creator subtitles first, but don't fail if they don't exist
+        try:
+            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except subprocess.CalledProcessError:
+            # Creator subtitles not available, will try auto-generated next
+            if debug:
+                print("__ Creator subtitles not available", file=sys.stderr)
 
         # If none, fallback to auto-generated subtitles
         found = any(f.lower().endswith('.srt') for f in os.listdir(output_dir))
@@ -84,7 +91,14 @@ def download_srt(url: str, debug: bool = False, backend: str = 'default', model:
                         if arg == base_output:
                             exec_cmd_auto[i] = os.path.join(output_dir, f"{video_id}.en.srt")
                 print(f"__ Running auto subtitles extraction: {' '.join(exec_cmd_auto)}", file=sys.stderr)
-            subprocess.run(cmd_auto, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            
+            try:
+                subprocess.run(cmd_auto, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except subprocess.CalledProcessError:
+                # yt-dlp may exit with code 1 even when subtitles are successfully downloaded
+                # We'll check for actual files below rather than relying on exit code
+                if debug:
+                    print("__ yt-dlp exited with error code (checking for subtitle files anyway)", file=sys.stderr)
             # Note where file is written (VTT -> SRT conversion)
             if debug:
                 for fname in os.listdir(output_dir):

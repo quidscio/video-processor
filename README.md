@@ -1,6 +1,6 @@
 # video-processor
 
-Command-line tool to transcribe and summarize video or audio files using Whisper and Claude Opus  4.
+Command-line tool to transcribe and summarize video or audio files using Whisper and Claude Opus  4. Best used under Linux/WSL. 
 
 See `readme_rmh.md` for full specifications and design.
 
@@ -34,9 +34,6 @@ pip install -U .
   ```bash
   # Debian/Ubuntu
   apt install ffmpeg
-
-  # macOS (Homebrew)
-  brew install ffmpeg
   ```
 
 ## Usage
@@ -98,7 +95,7 @@ video-processor --help
 cd project_folder 
 
 # build 
-pip install -U .          # Install to be used anywhere by user freezing production version vs edits 
+pip install -U .          # Install to be used from anywhere by user freezing production version vs edits 
 pip install -e .          # Install to be executed from dev area allowing ongoing edits 
 
 # execute modules directly (alternative to `pip install -e`)

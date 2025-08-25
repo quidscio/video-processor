@@ -3,7 +3,8 @@
     "allow": [
       "Bash(python:*)",
       "Bash(video-processor:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(yt-dlp:*)"
     ],
     "deny": []
   }
