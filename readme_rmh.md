@@ -82,7 +82,7 @@ Debug output should include:
     TODO: Consider writeup including points to M
     TODO: Do a program dataflow analysis & consider refactors or version on openrouter 
 09.30.25 Address youtube issue 
-    TODO: Address this YT video which will not download or yield SRT 
+    DONE: Address this YT video which will not download or yield SRT 
 
 #### Details for 9/30/25 YT Issue
 ```properties 
