@@ -32,9 +32,9 @@ pip install -U .
 
   To upgrade `yt-dlp`: 
   ```bash 
-source .venv/bin/activate
-python -m pip install --upgrade yt-dlp
-```
+  source .venv/bin/activate
+  python -m pip install --upgrade yt-dlp
+  ```
 
 
 - `ffmpeg` must be installed and on your PATH for Whisper transcription to decode the full audio track.
