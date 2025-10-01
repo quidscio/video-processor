@@ -81,6 +81,55 @@ Debug output should include:
     TODO: Fixup README.md 
     TODO: Consider writeup including points to M
     TODO: Do a program dataflow analysis & consider refactors or version on openrouter 
+09.30.25 Address youtube issue 
+    TODO: Address this YT video which will not download or yield SRT 
+
+#### Details for 9/30/25 YT Issue
+```properties 
+    |0:user@rmhlap-wsl2)-(11:17:09.30)|
+    /mnt/c/Users/rmhin/Downloads
+    |8) > video-processor -o= -d -D -y https://www.youtube.com/watch?v=0DA3i69WMF4
+    == Video Processor 1.5.5 20250930-111719 ==
+    .. Executing /home/user/bin/video-processor -o= -d -D -y https://www.youtube.com/watch?v=0DA3i69WMF4
+    .. Seeking subtitles for https://www.youtube.com/watch?v=0DA3i69WMF4
+    .. Downloading full video for https://www.youtube.com/watch?v=0DA3i69WMF4
+    __ Running video download with title 'Inside the high tech quest to decode the lost scrolls of Herculaneum | Casey Handmer': yt-dlp -f b -o Inside-the-high-tech-quest-to-decode-the-lost-scrolls-of-Herculaneum-Casey-Handmer_openai_o4-mini_20250930-111719.%(ext)s https://www.youtube.com/watch?v=0DA3i69WMF4
+    [youtube] Extracting URL: https://www.youtube.com/watch?v=0DA3i69WMF4
+    [youtube] 0DA3i69WMF4: Downloading webpage
+    [youtube] 0DA3i69WMF4: Downloading tv client config
+    [youtube] 0DA3i69WMF4: Downloading tv player API JSON
+    [youtube] 0DA3i69WMF4: Downloading ios player API JSON
+    [youtube] 0DA3i69WMF4: Downloading player da13af8d-main
+    WARNING: [youtube] Falling back to generic n function search
+            player = https://www.youtube.com/s/player/da13af8d/player_ias.vflset/en_US/base.js
+    WARNING: [youtube] 0DA3i69WMF4: nsig extraction failed: Some formats may be missing
+            n = Xw4xjSCZFPTkZs72z ; player = https://www.youtube.com/s/player/da13af8d/player_ias.vflset/en_US/base.js
+            Please report this issue on  https://github.com/yt-dlp/yt-dlp/issues?q= , filling out the appropriate issue template. Confirm you are on the latest version using  yt-dlp -U
+    WARNING: [youtube] 0DA3i69WMF4: nsig extraction failed: Some formats may be missing
+            n = VkL-nedWV_Pu3Cgc4 ; player = https://www.youtube.com/s/player/da13af8d/player_ias.vflset/en_US/base.js
+            Please report this issue on  https://github.com/yt-dlp/yt-dlp/issues?q= , filling out the appropriate issue template. Confirm you are on the latest version using  yt-dlp -U
+    WARNING: [youtube] 0DA3i69WMF4: nsig extraction failed: Some formats may be missing
+            n = ZU0zna3L4hHRWjHuM ; player = https://www.youtube.com/s/player/da13af8d/player_ias.vflset/en_US/base.js
+            Please report this issue on  https://github.com/yt-dlp/yt-dlp/issues?q= , filling out the appropriate issue template. Confirm you are on the latest version using  yt-dlp -U
+    WARNING: [youtube] 0DA3i69WMF4: Some web client https formats have been skipped as they are missing a url. YouTube is forcing SABR streaming for this client. See  https://github.com/yt-dlp/yt-dlp/issues/12482  for more details
+    [youtube] 0DA3i69WMF4: Downloading m3u8 information
+    ERROR: [youtube] 0DA3i69WMF4: Requested format is not available. Use --list-formats for a list of available formats
+    Error: Error downloading video: Command '['yt-dlp', '-f', 'b', '-o', 'Inside-the-high-tech-quest-to-decode-the-lost-scrolls-of-Herculaneum-Casey-Handmer_openai_o4-mini_20250930-111719.%(ext)s', 'https://www.youtube.com/watch?v=0DA3i69WMF4']' returned non-zero exit status 1.
+    |1:user@rmhlap-wsl2)-(11:17:29.30)|
+    /mnt/c/Users/rmhin/Downloads
+    |9) > video-processor -o=  -D -y https://www.youtube.com/watch?v=0DA3i69WMF4
+    == Video Processor 1.5.5 20250930-112914 ==
+    .. Executing /home/user/bin/video-processor -o= -D -y https://www.youtube.com/watch?v=0DA3i69WMF4
+    .. Seeking subtitles for https://www.youtube.com/watch?v=0DA3i69WMF4
+    __ Running creator subtitles extraction: yt-dlp -q --no-warnings --write-sub --skip-download --sub-lang en --convert-subs srt -o /tmp/vpdl-44pr9mn0/0DA3i69WMF4.srt https://www.youtube.com/watch?v=0DA3i69WMF4
+    ____ There aren't any subtitles to convert
+    __ Running auto subtitles extraction: yt-dlp -q --no-warnings --write-auto-sub --skip-download --sub-lang en --convert-subs srt -o /tmp/vpdl-44pr9mn0/0DA3i69WMF4.en.srt https://www.youtube.com/watch?v=0DA3i69WMF4
+    __ yt-dlp exited with error code (checking for subtitle files anyway)
+    Error: No SRT file found in /tmp/vpdl-44pr9mn0: yt-dlp did not produce any .srt.
+    |1:user@rmhlap-wsl2)-(11:29:40.30)|
+    /mnt/c/Users/rmhin/Downloads
+    |10) >
+```
 
 #### Setup items 
 We want to make this configurable (video-processor.cfg) or via .env or via command line option 

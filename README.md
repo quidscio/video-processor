@@ -30,6 +30,13 @@ pip install -U .
   ln -s /mnt/c/q/arc/projects/video-processor/.venv/bin/yt-dlp /home/user/bin/yt-dlp
   ```
 
+  To upgrade `yt-dlp`: 
+  ```bash 
+source .venv/bin/activate
+python -m pip install --upgrade yt-dlp
+```
+
+
 - `ffmpeg` must be installed and on your PATH for Whisper transcription to decode the full audio track.
   ```bash
   # Debian/Ubuntu
