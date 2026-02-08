@@ -27,30 +27,29 @@ def download_srt(url: str, debug: bool = False, backend: str = 'default', model:
     output_dir = tempfile.mkdtemp(prefix="vpdl-")
     base_output = os.path.join(output_dir, "%(id)s.%(ext)s")
     
-    # For debug mode, get video info for proper filename formatting
+    # Get video info for proper filename formatting
     video_id = None
     video_title = None
-    if debug:
-        try:
-            # Get video ID - don't use check=True since yt-dlp may have warnings
-            id_result = subprocess.run(
-                ["yt-dlp", "--get-id", "-q", url],
-                capture_output=True, text=True
-            )
-            # Check if we got a video ID, regardless of return code (yt-dlp may return non-zero with warnings)
-            if id_result.stdout.strip():
-                video_id = id_result.stdout.strip()
-            
-            # Get video title - don't use check=True since yt-dlp may have warnings  
-            title_result = subprocess.run(
-                ["yt-dlp", "--get-title", "-q", url],
-                capture_output=True, text=True
-            )
-            # Check if we got a title, regardless of return code (yt-dlp may return non-zero with warnings)
-            if title_result.stdout.strip():
-                video_title = title_result.stdout.strip()
-        except Exception:
-            pass
+    try:
+        # Get video ID - don't use check=True since yt-dlp may have warnings
+        id_result = subprocess.run(
+            ["yt-dlp", "--get-id", "-q", url],
+            capture_output=True, text=True
+        )
+        # Check if we got a video ID, regardless of return code (yt-dlp may return non-zero with warnings)
+        if id_result.stdout.strip():
+            video_id = id_result.stdout.strip()
+        
+        # Get video title - don't use check=True since yt-dlp may have warnings  
+        title_result = subprocess.run(
+            ["yt-dlp", "--get-title", "-q", url],
+            capture_output=True, text=True
+        )
+        # Check if we got a title, regardless of return code (yt-dlp may return non-zero with warnings)
+        if title_result.stdout.strip():
+            video_title = title_result.stdout.strip()
+    except Exception:
+        pass
     
     try:
         # Creator-provided subtitles
@@ -134,17 +133,24 @@ def download_srt(url: str, debug: bool = False, backend: str = 'default', model:
                 with open(path, encoding='utf-8') as f:
                     srt_content = f.read()
                 
-                # In debug mode, persist SRT file with proper filename formatting
-                if debug and video_title:
-                    # Use same slugification as MD files
-                    from .cli import slugify_filename_component
+                # Persist SRT file with proper filename formatting
+                # Use same slugification as MD files
+                from .cli import slugify_filename_component
+                if video_title:
                     slug = slugify_filename_component(video_title)
-                    # Add timestamp suffix to SRT files using global timestamp
-                    from .cli import generate_timestamp_suffix
-                    timestamp_suffix = generate_timestamp_suffix(backend, model)
-                    debug_srt_path = Path.cwd() / f"{slug}{timestamp_suffix}.srt"
-                    debug_srt_path.write_text(srt_content, encoding='utf-8')
-                    print(f"__ Saved SRT file to {debug_srt_path}", file=sys.stderr)
+                elif video_id:
+                    slug = slugify_filename_component(video_id)
+                else:
+                    slug = slugify_filename_component(Path(path).stem)
+                # Add timestamp suffix to SRT files using global timestamp
+                from .cli import generate_timestamp_suffix
+                timestamp_suffix = generate_timestamp_suffix(backend, model)
+                srt_path = Path.cwd() / f"{slug}{timestamp_suffix}.srt"
+                srt_path.write_text(srt_content, encoding='utf-8')
+                if debug:
+                    print(f"__ Saved SRT file to {srt_path}", file=sys.stderr)
+                else:
+                    print(f".. Saved SRT file to {srt_path}", file=sys.stderr)
                 
                 return srt_content
         raise RuntimeError(

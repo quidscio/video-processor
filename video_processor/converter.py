@@ -41,17 +41,16 @@ def transcribe_to_srt(
         raise RuntimeError(
             "ffmpeg not found in PATH; please install ffmpeg for transcription"
         )
-    # Timestamp suffix for debug artifacts and sanitize basename for debug files
+    # Timestamp suffix for artifact naming and sanitize basename for files
     from .cli import generate_timestamp_suffix
-    timestamp_suffix = generate_timestamp_suffix(backend, model_name) if debug else ""
+    timestamp_suffix = generate_timestamp_suffix(backend, model_name)
     raw_stem = Path(input_path).stem
+    # slugify stem: remove invalid chars and replace spaces/underscores with hyphens
+    stem = re.sub(r"[^\w\s-]", "", raw_stem).strip()
+    stem = re.sub(r"[\s_-]+", "-", stem)
     if debug:
-        # slugify stem: remove invalid chars and replace spaces/underscores with hyphens
-        stem = re.sub(r"[^\w\s-]", "", raw_stem).strip()
-        stem = re.sub(r"[\s_-]+", "-", stem)
         wav_name = f"{stem}{timestamp_suffix}.wav"
     else:
-        stem = raw_stem
         wav_name = None
     tmp_wav = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
     tmp_wav.close()
@@ -123,9 +122,9 @@ def transcribe_to_srt(
         subtitle = srt.Subtitle(index=i, start=start, end=end, content=content)
         subtitles.append(subtitle)
         srt_text = srt.compose(subtitles)
+        # save SRT for debugging with timestamp suffix using global timestamp
+        srt_file = Path.cwd() / f"{stem}{timestamp_suffix}.srt"
+        srt_file.write_text(srt_text, encoding='utf-8')
         if debug:
-            # save SRT for debugging with timestamp suffix using global timestamp
-            srt_file = Path.cwd() / f"{stem}{timestamp_suffix}.srt"
-            srt_file.write_text(srt_text, encoding='utf-8')
             print(f"__ Saved intermediate SRT to {srt_file}")
     return srt_text
