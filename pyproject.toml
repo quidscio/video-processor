@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "video-processor"
-version = "1.5.7"
-description = "CLI to transcribe and summarize video/audio using Whisper and Claude Opus 4"
+version = "1.5.8"
+description = "CLI to transcribe video/audio (whisper) and summarize (OpenAI, Ollama, Anthropic)"
 readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
