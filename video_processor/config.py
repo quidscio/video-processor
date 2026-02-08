@@ -60,7 +60,7 @@ if not _raw.startswith(("http://", "https://")):
     _raw = "http://" + hostport
 OLLAMA_URL = _raw
 
-# Whisper defaults
+# Whisper defaults (use base model as safe default...)
 WHISPER_MODEL = os.getenv("WHISPER_MODEL", _cfg.get("whisper_model", "base"))
 # Device for Whisper (e.g. 'cuda' or 'cpu')
 DEVICE = os.getenv("DEVICE", _cfg.get("device", "cuda"))

@@ -10,7 +10,7 @@ ollama_host = "localhost:11434"
 # openai_base_url = "https://api.openai.com/v1"  # Custom endpoint if needed
 
 # Whisper defaults:
-whisper_model = "base"
+whisper_model = "large-v3"
 device        = "cuda"  # or "cpu"
 
 # LLM defaults:

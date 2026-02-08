@@ -7,5 +7,6 @@ model = "o4-mini"
 # whisper_model = "small"
 # device        = "cpu"
 
-whisper_model = "medium"
+# whisper_model = "medium"
+whisper_model = "large-v3"
 device      = "cuda"
