@@ -17,7 +17,7 @@ After some experimentation I found the following approach worked.
 * Time saved to reach this point 
 
 TODO: Include transcription prompt somewhere  
-TODO: Include sample output somewhere 
+DONE: Include sample output somewhere 
 
 ### Fine Points 
 While a simple process, there are fine points to consider
@@ -74,15 +74,16 @@ Debug output should include:
 
 07.03.25 Requirements  
 07.06.25 V1 YT URL works. Improvements required  
-    TODO: (in progress) Eliminate environment setting dependencies; anthropic backend, any others  
-    TODO: Test approach to enable WSL to windows host for ollama server config  
+    DONE: (in progress) Eliminate environment setting dependencies; anthropic backend, any others  
+    DONE: Test approach to enable WSL to windows host for ollama server config  
     BUG: This must be specified in config and can't be via CLI, ollama_host = "192.168.1.68"
 07.10.25 OpenAI completed 
-    TODO: Fixup README.md 
-    TODO: Consider writeup including points to M
-    TODO: Do a program dataflow analysis & consider refactors or version on openrouter 
+    DONE: Fixup README.md 
+    FUTURE: Consider writeup including points to M
+    FUTURE Do a program dataflow analysis & consider refactors or version on openrouter 
 09.30.25 Address youtube issue 
     DONE: Address this YT video which will not download or yield SRT 
+02.08.26 Updated YT, multiple refinements 
 
 #### Details for 9/30/25 YT Issue
 ```properties 

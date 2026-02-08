@@ -1,6 +1,6 @@
 # video-processor
 
-Command-line tool to transcribe and summarize video or audio files using Whisper and Claude Opus  4. Best used under Linux/WSL. 
+Command-line tool to transcribe and summarize video or audio files using Whisper and Claude Opus  4. Use under Linux/WSL. 
 
 See `readme_rmh.md` for full specifications and design.
 

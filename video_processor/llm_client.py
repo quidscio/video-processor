@@ -161,27 +161,36 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, de
         if config_api_key:
             api_key = config_api_key
         
-        url = f"{base_url}/chat/completions"
+        use_responses_api = model.startswith("gpt-5")
+        if use_responses_api:
+            url = f"{base_url}/responses"
+            payload = {
+                'model': model,
+                'input': prompt,
+                'max_output_tokens': max_tokens,
+                'temperature': temperature,
+            }
+        else:
+            url = f"{base_url}/chat/completions"
+            payload = {
+                'model': model,
+                'messages': [{'role': 'user', 'content': prompt}],
+            }
+            # Some newer models (like o4-mini, o3) have specific requirements
+            if model.startswith(('o3-', 'o4-')):
+                payload['max_completion_tokens'] = max_tokens
+                # These models only support temperature=1 (default)
+                if temperature != 1.0:
+                    if debug:
+                        print(f"__ LLM Debug: Model {model} only supports temperature=1, ignoring temperature={temperature}", file=sys.stderr)
+            else:
+                payload['max_tokens'] = max_tokens
+                payload['temperature'] = temperature
+        
         headers = {
             'Authorization': f'Bearer {api_key}',
             'Content-Type': 'application/json'
         }
-        
-        payload = {
-            'model': model,
-            'messages': [{'role': 'user', 'content': prompt}],
-        }
-        
-        # Some newer models (like o4-mini, o3) have specific requirements
-        if model.startswith(('o3-', 'o4-')):
-            payload['max_completion_tokens'] = max_tokens
-            # These models only support temperature=1 (default)
-            if temperature != 1.0:
-                if debug:
-                    print(f"__ LLM Debug: Model {model} only supports temperature=1, ignoring temperature={temperature}", file=sys.stderr)
-        else:
-            payload['max_tokens'] = max_tokens
-            payload['temperature'] = temperature
         
         # Retry logic for OpenAI API calls
         max_retries = 3
@@ -235,7 +244,34 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, de
             # This should not happen, but just in case
             raise RuntimeError("** OpenAI API call failed after all retry attempts")
             
-        # Extract response content
+        if use_responses_api:
+            # Extract response content from Responses API
+            parts = []
+            for item in data.get('output', []):
+                if item.get('type') == 'message':
+                    for c in item.get('content', []):
+                        if c.get('type') == 'output_text':
+                            parts.append(c.get('text', ''))
+            content = "".join(parts).strip()
+            if not content:
+                # Fallbacks for unexpected shapes
+                content = data.get('output_text', '') or data.get('text', '')
+            
+            # Check for truncation / incomplete response
+            was_truncated = False
+            if data.get('status') == 'incomplete' or data.get('incomplete_details'):
+                print("** ERROR: Output truncated or incomplete (Responses API)", file=sys.stderr)
+                was_truncated = True
+            
+            if debug:
+                usage = data.get('usage', {})
+                print(f"__ LLM Debug: OpenAI usage: {usage}", file=sys.stderr)
+                print(f"__ LLM Debug: Output length: {len(content)} chars", file=sys.stderr)
+                print(f"__ LLM Debug: Status: {data.get('status')}", file=sys.stderr)
+            
+            return content, was_truncated
+        
+        # Extract response content (Chat Completions)
         content = data['choices'][0]['message']['content']
         
         # Check for truncation
