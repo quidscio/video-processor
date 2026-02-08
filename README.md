@@ -18,6 +18,15 @@ pip install video-processor
 pip install -U .
 ```
 
+## Releases
+
+This repo uses two different notions of "release":
+
+- Source release (what I do here): commit and push to `origin/main`. No packaging or uploads required.
+- PyPI release (not used): build a distribution and upload to PyPI. This requires credentials (e.g., via `twine`).
+
+If you are not publishing to PyPI, you do not need `python -m build` or `twine`.
+
 ## Prerequisites
 
 - `yt-dlp` must be installed and on your PATH if you plan to use `--youtube`.
@@ -101,9 +110,12 @@ video-processor --help
 # All in project folder 
 cd project_folder 
 
+# Set env
+source .venv/bin/activate
+
 # build 
-pip install -U .          # Install to be used from anywhere by user freezing production version vs edits 
 pip install -e .          # Install to be executed from dev area allowing ongoing edits 
+pip install -U .          # Install to be used from anywhere by user freezing production version vs edits 
 
 # execute modules directly (alternative to `pip install -e`)
 python3 -m video_processor.cli --help
