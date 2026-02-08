@@ -128,6 +128,9 @@ video-processor -o= -y https://youtu.be/VIDEO_ID
 # custom filename
 video-processor -o my_summary.md  -y https://youtu.be/VIDEO_ID
 ```
+**Output Artifacts**
+SRT transcripts are always saved to the working directory with the same timestamp suffix as other outputs.
+With `--debug`, the intermediate WAV is also saved for inspection.
 # One-off backend/host override (does not require editing config.toml):
 ```bash
 # override LLM backend
@@ -219,7 +222,7 @@ backend     = "ollama"
 ollama_host = "192.168.1.68"
 
 # Whisper defaults:
-whisper_model = "medium"    # or base or small 
+whisper_model = "large-v3"  # or medium or base or small 
 device        = "cuda"      # or "cpu"
 ```
 

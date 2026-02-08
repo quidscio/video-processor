@@ -68,7 +68,7 @@ The program must have a -d --debug flag to enable debug output.
 Debug output should include:
 * External commands used exactly as used without unevaluated parms
 * Important decisions made and why
-* Save of working files using timestamp prefix, yyyymmdd_hhmmss_filename 
+* Save of working files using timestamp suffix, filename_yyyymmdd-hhmmss 
 
 # Chronology 
 
