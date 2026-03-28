@@ -121,6 +121,8 @@ pip install -U .          # Install to be used from anywhere by user freezing pr
 python3 -m video_processor.cli --help
 ```
 
+**NOTE:** When bumping the version, change only `pyproject.toml` and then rebuild to see the new version id.
+
 # Examples of writing output to file:
 ```bash
 # default filename (uses video title, no spaces): use `-o=` or `-o =` (equals/magic token)

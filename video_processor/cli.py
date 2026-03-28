@@ -9,8 +9,8 @@ import sys
 import subprocess
 import re
 import shutil
-import time
 import glob
+import tempfile
 from pathlib import Path
 from datetime import datetime
 import importlib.resources as pkg_resources
@@ -83,6 +83,55 @@ def generate_timestamp_suffix(backend: str, model: str) -> str:
     safe_backend = slugify_filename_component(backend)
     safe_model = slugify_filename_component(model)
     return f"_{safe_backend}_{safe_model}_{timestamp}"
+
+def strip_media_creation_time(path: Path, debug: bool = False) -> None:
+    """Remux media to remove embedded creation timestamps that Explorer may prefer over file mtime."""
+    if path.suffix.lower() not in {".mp4", ".m4a", ".mov"}:
+        return
+    if shutil.which("ffmpeg") is None:
+        if debug:
+            click.echo(f"__ Skipping metadata strip for {path.name}: ffmpeg not found", err=True)
+        return
+
+    temp_file = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            dir=str(path.parent),
+            prefix=f".{path.stem}.",
+            suffix=path.suffix,
+            delete=False,
+        ) as tmp:
+            temp_file = Path(tmp.name)
+
+        cmd = [
+            "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostats",
+            "-y", "-i", str(path),
+            "-map", "0", "-c", "copy",
+            "-map_metadata", "-1",
+            "-movflags", "use_metadata_tags",
+            str(temp_file),
+        ]
+        if debug:
+            click.echo(f"__ Stripping embedded creation_time from {path.name}", err=True)
+        try:
+            subprocess.run(
+                cmd,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+        except subprocess.CalledProcessError as exc:
+            msg = (exc.stderr or exc.stdout or "").strip()
+            if debug and msg:
+                click.echo(msg, err=True)
+            raise RuntimeError(
+                f"Error stripping embedded creation_time for {path.name}: {msg or exc}"
+            ) from exc
+        os.replace(temp_file, path)
+    finally:
+        if temp_file and temp_file.exists():
+            temp_file.unlink()
 
 # Custom command class to include version header in help output
 class VersionedHelpCommand(click.Command):
@@ -277,23 +326,19 @@ def main(
             if not debug:
                 cmd_vid += ["-q", "--no-warnings"]
             # Select best single file format (highest resolution) - use "b" to suppress warning
-            cmd_vid += ["-f", "b", "-o", out_template, source]
+            cmd_vid += ["--no-mtime", "-f", "b", "-o", out_template, source]
             if debug:
                 # Show what template will be used 
                 if title:
-                    click.echo(f"__ Running video download with title '{title}': yt-dlp -f b -o {out_template} {source}", err=True)
+                    click.echo(f"__ Running video download with title '{title}': yt-dlp --no-mtime -f b -o {out_template} {source}", err=True)
                 else:
-                    click.echo(f"__ Running video download (title extraction failed): yt-dlp -f b -o {out_template} {source}", err=True)
+                    click.echo(f"__ Running video download (title extraction failed): yt-dlp --no-mtime -f b -o {out_template} {source}", err=True)
             try:
                 subprocess.run(cmd_vid, check=True)
-                # Update video file modification time to current time for proper sorting
-                # Find the downloaded video file(s) that match our pattern
                 if title:
-                    # Use the same slug as above
                     slug = slugify_filename_component(title)
                     base_pattern = f"{slug}{timestamp_suffix}.*"
                 else:
-                    # Get video ID for fallback pattern
                     try:
                         video_id = subprocess.run(
                             ["yt-dlp", "--get-id", "-q", source],
@@ -302,14 +347,9 @@ def main(
                         base_pattern = f"{video_id}{timestamp_suffix}.*"
                     except Exception:
                         base_pattern = f"*{timestamp_suffix}.*"
-                
-                # Find and update modification time of downloaded video files
-                current_time = time.time()
                 for video_file in glob.glob(base_pattern):
                     if os.path.isfile(video_file):
-                        os.utime(video_file, (current_time, current_time))
-                        if debug:
-                            click.echo(f"__ Updated modification time for {video_file}", err=True)
+                        strip_media_creation_time(Path(video_file), debug=debug)
             except Exception as e:
                 raise click.ClickException(f"Error downloading video: {e}")
         from .downloader import download_srt
