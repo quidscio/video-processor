@@ -143,13 +143,13 @@ class VersionedHelpCommand(click.Command):
         formatter.write_text("")
         formatter.write_text("Examples:")
         formatter.write_text(
-            "  video-processor -o= -w medium -b ollama -l deepseek-r1:7b -d -y https://www.youtube.com/watch?v=VIDEO"
+            "  video-processor -w medium -b ollama -l deepseek-r1:7b -d -y https://www.youtube.com/watch?v=VIDEO"
         )
         formatter.write_text(
-            "  video-processor -o= -w medium -b anthropic -l claude-opus-4-20250514 -d -y https://www.youtube.com/watch?v=VIDEO"
+            "  video-processor -w medium -b anthropic -l claude-opus-4-20250514 -d -y https://www.youtube.com/watch?v=VIDEO"
         )
         formatter.write_text(
-            "  video-processor -o= -w medium -b openai -l o4-mini-2025-04-16 -d -y https://www.youtube.com/watch?v=VIDEO"
+            "  video-processor -w medium -b openai -l o4-mini-2025-04-16 -d -y https://www.youtube.com/watch?v=VIDEO"
         )
 
 
@@ -210,9 +210,14 @@ class VersionedHelpCommand(click.Command):
     help="Symlink the installed video-processor entrypoint into $HOME/bin and exit."
 )
 @click.option(
+    "-T", "--transcript",
+    is_flag=True,
+    help="Treat SOURCE as a pre-existing transcript; skip Whisper. Auto-detected for .srt and .txt files."
+)
+@click.option(
     "-o", "--output",
     default=None, metavar="FILE",
-    help="Write summarization to FILE; use -o= to auto-generate from video title (no spaces)."
+    help="Write summarization to FILE. Omit -o to auto-save with title-derived filename; use -o= to print to stdout instead."
 )
 def main(
     youtube: bool,
@@ -225,6 +230,7 @@ def main(
     ollama_host: str,
     init_config: bool,
     symlink_cli: bool,
+    transcript: bool,
     output: str,
     debug: bool,
     source: str = None,
@@ -293,7 +299,23 @@ def main(
     else:
         backend_used = CONFIG_BACKEND
 
-    if youtube:
+    # Determine if source is a pre-existing transcript (flag or auto-detected extension)
+    source_ext = os.path.splitext(source)[1].lower() if source else ""
+    is_transcript = transcript or (not youtube and source_ext in (".srt", ".txt"))
+
+    if is_transcript:
+        if debug:
+            click.echo(f"__ Transcript mode: reading {source} directly (skipping Whisper)", err=True)
+        with open(source, "r", encoding="utf-8") as f:
+            raw_text = f.read()
+        if source_ext == ".srt":
+            click.echo(f".. Reading SRT transcript: {source}")
+            srt_text = raw_text
+        else:
+            # Plain text or unknown extension: pass directly to LLM, skipping SRT parsing
+            click.echo(f".. Reading plain-text transcript: {source}")
+            srt_text = None  # handled below
+    elif youtube:
         click.echo(f".. Seeking subtitles for {source}")
         if download_video:
             click.echo(f".. Downloading full video for {source}")
@@ -378,7 +400,11 @@ def main(
         _lc.OLLAMA_URL = _raw
         click.echo(f".. Overriding Ollama URL to {_raw}")
 
-    timestamped = srt_to_timestamped_lines(srt_text)
+    if is_transcript and source_ext != ".srt":
+        # Plain text: use as-is, no SRT parsing
+        timestamped = raw_text
+    else:
+        timestamped = srt_to_timestamped_lines(srt_text)
     template = load_template("transcribe.tpl")
     prompt = template.replace("{{ transcript }}", timestamped)
     # Track if any errors occurred during processing
@@ -448,10 +474,12 @@ def main(
             f"Error during chat completion: {msg}\n"
             "Ensure your LLM backend is configured correctly (check LLM_BACKEND, OLLAMA_URL, ANTHROPIC_API_KEY, OPENAI_API_KEY)."
         )
-    # Handle output: write to file if requested, else print to stdout
-    if output is not None:
-        # Determine filename: empty or '=' means auto-generate
-        if output in ("", "="):
+    # Handle output: -o= prints to stdout; omitting -o auto-saves to file; -o FILE saves to named file
+    if output in ("", "="):
+        click.echo(md)
+    else:
+        if output is None:
+            # Auto-generate filename from video title
             try:
                 # Don't use check=True since yt-dlp may have warnings but still succeed
                 result = subprocess.run(
@@ -484,8 +512,6 @@ def main(
             click.echo(f".. Summarization overwritten to {filename}")
         else:
             click.echo(f".. Summarization written to {filename}")
-    else:
-        click.echo(md)
     
     # Exit with non-zero code if any errors occurred during processing
     if has_errors:

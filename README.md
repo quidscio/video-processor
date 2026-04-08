@@ -85,12 +85,12 @@ video-processor --symlink-cli
 ### Favorite Backends and Models 
 
 ```bash
-# Download YouTube, transcribe, and summarize locally
-video-processor -o= -w medium -b ollama -l deepseek-r1:7b  -y https://www.youtube.com/watch?v=BaETCQTnr8k
+# Download YouTube, transcribe, and summarize locally (auto-saves to title-derived filename)
+video-processor -w medium -b ollama -l deepseek-r1:7b  -y https://www.youtube.com/watch?v=BaETCQTnr8k
 
-# Same but use Anthropic for Summarization 
-video-processor -o= -w medium -b anthropic -l claude-opus-4-20250514     -y https://www.youtube.com/watch?v=BaETCQTnr8k
-video-processor -o= -w medium -b anthropic -l claude-sonnet-4-20250514   -y https://www.youtube.com/watch?v=BaETCQTnr8k
+# Same but use Anthropic for Summarization
+video-processor -w medium -b anthropic -l claude-opus-4-20250514     -y https://www.youtube.com/watch?v=BaETCQTnr8k
+video-processor -w medium -b anthropic -l claude-sonnet-4-20250514   -y https://www.youtube.com/watch?v=BaETCQTnr8k
 
 # Transcribe a local media file:
 video-processor my_video.mp4
@@ -123,12 +123,23 @@ python3 -m video_processor.cli --help
 
 **NOTE:** When bumping the version, change only `pyproject.toml` and then rebuild to see the new version id.
 
-# Examples of writing output to file:
+# Output behavior:
 ```bash
-# default filename (uses video title, no spaces): use `-o=` or `-o =` (equals/magic token)
+# default (no -o): auto-save to title-derived filename
+video-processor -y https://youtu.be/VIDEO_ID
+# -o=: print to stdout instead of saving
 video-processor -o= -y https://youtu.be/VIDEO_ID
 # custom filename
 video-processor -o my_summary.md  -y https://youtu.be/VIDEO_ID
+```
+
+# Skip transcription — go straight to summarization:
+```bash
+# .srt and .txt files are auto-detected; Whisper is skipped automatically
+video-processor transcript.srt
+video-processor notes.txt
+# Explicit flag for other extensions or to be unambiguous
+video-processor -T my_transcript.log
 ```
 **Output Artifacts**
 SRT transcripts are always saved to the working directory with the same timestamp suffix as other outputs.

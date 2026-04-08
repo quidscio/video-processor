@@ -204,8 +204,8 @@ ____ Writing subtitles to file []
 ### Favorite command lines
 
 ```bash
-video-processor -o= -w medium -b ollama -l deepseek-r1:7b  -y https://www.youtube.com/watch?v=VIDEO
-video-processor -o= -w medium -b anthropic -l claude-opus-4-20250514     -y https://www.youtube.com/watch?v=VIDEO
+video-processor -w medium -b ollama -l deepseek-r1:7b  -y https://www.youtube.com/watch?v=VIDEO
+video-processor -w medium -b anthropic -l claude-opus-4-20250514     -y https://www.youtube.com/watch?v=VIDEO
 ```
 
 ### Model Price Comparison and Effectiveness Prediction 
