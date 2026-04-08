@@ -11,7 +11,7 @@ See `readme_rmh.md` for full specifications and design.
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Install latest release from PyPI
+# Install latest release from PyPI (if it were on PyPI which it isn't)
 pip install video-processor
 
 # (or, install from this source tree for development / upgrade to latest local changes)
@@ -95,11 +95,10 @@ video-processor -w medium -b anthropic -l claude-sonnet-4-20250514   -y https://
 # Transcribe a local media file:
 video-processor my_video.mp4
 
-# Download captions from YouTube and process:
-video-processor --youtube https://youtu.be/VIDEO_ID
-
-# Enable debug logging for downloader and LLM interactions:
-video-processor --youtube --debug https://youtu.be/VIDEO_ID
+# Summarize existing transcript 
+video-processor  -b openai -l o4-mini input-file.srt                  # current default model
+video-processor  -b anthropic -l claude-sonnet-4-6 input-file.srt     # much better (like 2x longer) for 4x cost
+video-processor  -b anthropic -l claude-opus-4-6 input-file.srt       # a bit better for 77% more cost 
 
 # See full option list:
 video-processor --help
