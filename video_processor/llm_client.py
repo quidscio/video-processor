@@ -41,7 +41,7 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, de
     
     if backend == 'anthropic':
         try:
-            from anthropic import Client, HUMAN_PROMPT, AI_PROMPT
+            from anthropic import Anthropic
         except ModuleNotFoundError:
             raise RuntimeError(
                 "Anthropic SDK is not installed; please install with `pip install anthropic>=0.3.0`"
@@ -50,87 +50,36 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, de
         api_key = os.getenv('ANTHROPIC_API_KEY')
         if not api_key:
             raise RuntimeError('ANTHROPIC_API_KEY is not set')
+
+        client = Anthropic(api_key=api_key)
         try:
-            client = Client(api_key=api_key)
-        except TypeError:
-            client = Client()
-        full_prompt = HUMAN_PROMPT + prompt + AI_PROMPT
-        try:
-            response = client.completions.create(
-                model=model,
-                prompt=full_prompt,
-                temperature=temperature,
-                max_tokens_to_sample=max_tokens,
-                stream=True,
-            )
-            # Handle streaming response
-            completion = ""
+            text = ''
             stop_reason = None
-            for chunk in response:
-                if hasattr(chunk, 'completion'):
-                    completion += chunk.completion
-                if hasattr(chunk, 'stop_reason'):
-                    stop_reason = chunk.stop_reason
-            
-            # Check for token limit issues
+            with client.messages.stream(
+                model=model,
+                messages=[{'role': 'user', 'content': prompt}],
+                temperature=temperature,
+                max_tokens=max_tokens,
+            ) as stream:
+                for chunk in stream.text_stream:
+                    text += chunk
+                stop_reason = stream.get_final_message().stop_reason
+
             was_truncated = False
             if stop_reason == 'max_tokens':
                 print(f"** ERROR: Output truncated due to OUTPUT token limit ({max_tokens} tokens reached)", file=sys.stderr)
                 was_truncated = True
-            
-            # Debug logging for output
+
             if debug:
-                output_length = len(completion)
-                estimated_output_tokens = output_length // 4
-                print(f"__ LLM Debug: Output length: {output_length} chars (~{estimated_output_tokens} tokens)", file=sys.stderr)
-                if stop_reason:
-                    print(f"__ LLM Debug: Stop reason: {stop_reason}", file=sys.stderr)
-            
-            return completion, was_truncated
+                output_length = len(text)
+                print(f"__ LLM Debug: Output length: {output_length} chars (~{output_length // 4} tokens)", file=sys.stderr)
+                print(f"__ LLM Debug: Stop reason: {stop_reason}", file=sys.stderr)
+
+            return text, was_truncated
         except Exception as e:
             err = str(e)
-            # Check for token limit errors
             if 'token' in err.lower() and ('limit' in err.lower() or 'exceeded' in err.lower()):
                 raise RuntimeError(f"Token limit exceeded: {err}. Consider reducing transcript length or increasing token limit.")
-            # Fallback to the Anthropic Messages API for models that no longer support Completions
-            if 'Please use the Messages API instead' in err:
-                messages_payload = [{'role': 'user', 'content': prompt}]
-                resp_msg = client.messages.create(
-                    model=model,
-                    messages=messages_payload,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                    stream=True,
-                )
-                # Handle streaming Messages API response
-                try:
-                    text = ''
-                    stop_reason = None
-                    for chunk in resp_msg:
-                        if hasattr(chunk, 'delta') and hasattr(chunk.delta, 'text'):
-                            text += chunk.delta.text
-                        elif hasattr(chunk, 'message') and hasattr(chunk.message, 'stop_reason'):
-                            stop_reason = chunk.message.stop_reason
-                        elif hasattr(chunk, 'stop_reason'):
-                            stop_reason = chunk.stop_reason
-                    
-                    # Check for token limit issues in Messages API
-                    was_truncated = False
-                    if stop_reason == 'max_tokens':
-                        print(f"** ERROR: Output truncated due to OUTPUT token limit ({max_tokens} tokens reached)", file=sys.stderr)
-                        was_truncated = True
-                    
-                    # Debug logging for Messages API output
-                    if debug:
-                        output_length = len(text)
-                        estimated_output_tokens = output_length // 4
-                        print(f"__ LLM Debug: Output length: {output_length} chars (~{estimated_output_tokens} tokens)", file=sys.stderr)
-                        if stop_reason:
-                            print(f"__ LLM Debug: Stop reason: {stop_reason}", file=sys.stderr)
-                    
-                    return text, was_truncated
-                except Exception:
-                    return str(resp_msg), False
             raise
 
     if backend == 'openai':
