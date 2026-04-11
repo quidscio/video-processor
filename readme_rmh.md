@@ -83,7 +83,12 @@ Debug output should include:
     FUTURE Do a program dataflow analysis & consider refactors or version on openrouter 
 09.30.25 Address youtube issue 
     DONE: Address this YT video which will not download or yield SRT 
-02.08.26 Updated YT, multiple refinements 
+02.08.26 Updated YT, multiple refinements
+04.11.26 yt-dlp JS runtime + Whisper fallback
+    DONE: yt-dlp now requires a JS runtime (Deno) for YouTube n-challenge solving since ~2026.3
+    DONE: Install Deno and add to PATH; clear cache with `yt-dlp --rm-cache-dir` after upgrade
+    DONE: `-d -D -y` now falls back to Whisper when no subtitles are found, instead of hard erroring
+    DONE: `-y` without `-d` still errors with hint to add `-d` to enable Whisper fallback 
 
 #### Details for 9/30/25 YT Issue
 ```properties 

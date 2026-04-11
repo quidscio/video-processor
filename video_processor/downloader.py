@@ -154,7 +154,7 @@ def download_srt(url: str, debug: bool = False, backend: str = 'default', model:
                 
                 return srt_content
         raise RuntimeError(
-            f"No SRT file found in {output_dir}: yt-dlp did not produce any .srt."
+            f"No SRT file found in {output_dir}: yt-dlp did not produce any .srt. Try downloading (-d) the video to enable whisper transcription."
         )
     finally:
         shutil.rmtree(output_dir, ignore_errors=True)

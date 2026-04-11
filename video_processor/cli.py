@@ -369,16 +369,22 @@ def main(
                         base_pattern = f"{video_id}{timestamp_suffix}.*"
                     except Exception:
                         base_pattern = f"*{timestamp_suffix}.*"
+                downloaded_video_file = None
                 for video_file in glob.glob(base_pattern):
                     if os.path.isfile(video_file):
                         strip_media_creation_time(Path(video_file), debug=debug)
+                        downloaded_video_file = video_file
             except Exception as e:
                 raise click.ClickException(f"Error downloading video: {e}")
         from .downloader import download_srt
         try:
             srt_text = download_srt(source, debug=debug, backend=backend_used, model=llm_model)
         except RuntimeError as err:
-            raise click.ClickException(str(err))
+            if not download_video or not downloaded_video_file:
+                raise click.ClickException(str(err))
+            click.echo(f".. No subtitles found; falling back to Whisper transcription", err=True)
+            from .converter import transcribe_to_srt
+            srt_text = transcribe_to_srt(downloaded_video_file, whisper_model, debug=debug, backend=backend_used, model=llm_model)
     else:
         from .converter import transcribe_to_srt
 

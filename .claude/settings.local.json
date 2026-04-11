@@ -4,7 +4,8 @@
       "Bash(python:*)",
       "Bash(video-processor:*)",
       "Bash(ls:*)",
-      "Bash(yt-dlp:*)"
+      "Bash(yt-dlp:*)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": []
   }

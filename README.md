@@ -45,6 +45,20 @@ If you are not publishing to PyPI, you do not need `python -m build` or `twine`.
   python -m pip install --upgrade yt-dlp
   ```
 
+- **JavaScript runtime for yt-dlp** (required for YouTube since yt-dlp ~2026.3):
+  yt-dlp needs a JS runtime to solve YouTube's n-challenges. Install **Deno** (the default):
+  ```bash
+  curl -fsSL https://deno.land/install.sh | sh
+  ```
+  Then add to `~/.bashrc`:
+  ```bash
+  export PATH="$HOME/.deno/bin:$PATH"
+  ```
+  If yt-dlp still fails after installing Deno, clear the solver script cache:
+  ```bash
+  yt-dlp --rm-cache-dir
+  ```
+
 
 - `ffmpeg` must be installed and on your PATH for Whisper transcription to decode the full audio track.
   ```bash
@@ -91,6 +105,10 @@ video-processor -w medium -b ollama -l deepseek-r1:7b  -y https://www.youtube.co
 # Same but use Anthropic for Summarization
 video-processor -w medium -b anthropic -l claude-opus-4-20250514     -y https://www.youtube.com/watch?v=BaETCQTnr8k
 video-processor -w medium -b anthropic -l claude-sonnet-4-20250514   -y https://www.youtube.com/watch?v=BaETCQTnr8k
+
+# YouTube with automatic Whisper fallback when no subtitles are available:
+# -d downloads the video; -D enables debug output; if no SRT is found, Whisper transcribes the video
+video-processor -d -D -y https://www.youtube.com/watch?v=BaETCQTnr8k
 
 # Transcribe a local media file:
 video-processor my_video.mp4
