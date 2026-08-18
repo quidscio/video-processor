@@ -1,5 +1,6 @@
 .venv
 .vscode
+.claude/settings.local.json
 archive 
 
 __pycache__
