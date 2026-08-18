@@ -117,7 +117,7 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, de
                 'model': model,
                 'input': prompt,
                 'max_output_tokens': max_tokens,
-                'temperature': temperature,
+                # temperature not supported by gpt-5.6+ in Responses API
             }
         else:
             url = f"{base_url}/chat/completions"
@@ -142,10 +142,12 @@ def chat(prompt: str, model: str = 'claude-opus-4', temperature: float = 0.0, de
         }
         
         # Retry logic for OpenAI API calls
+        # Responses API (gpt-5.x) needs more time — reasoning models can take minutes
+        request_timeout = 300 if use_responses_api else 60
         max_retries = 3
         for attempt in range(max_retries):
             try:
-                resp = requests.post(url, json=payload, headers=headers, timeout=60)
+                resp = requests.post(url, json=payload, headers=headers, timeout=request_timeout)
                 resp.raise_for_status()
                 data = resp.json()
                 break
