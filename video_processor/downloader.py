@@ -12,7 +12,7 @@ import re
 from pathlib import Path
 from datetime import datetime
 
-def download_srt(url: str, debug: bool = False, backend: str = 'default', model: str = 'default') -> str:
+def download_srt(url: str, debug: bool = False, backend: str = 'default', model: str = 'default', yt_cookies: str = None) -> str:
     """
     Download English subtitles for a YouTube URL, preferring creator-provided subs and
     falling back to auto-generated. Returns the SRT content as a string.
@@ -53,8 +53,10 @@ def download_srt(url: str, debug: bool = False, backend: str = 'default', model:
     
     try:
         # Creator-provided subtitles
-        cmd = [
-            "yt-dlp", "-q", "--no-warnings",
+        cmd = ["yt-dlp", "-q", "--no-warnings", "--no-continue"]
+        if yt_cookies:
+            cmd += ["--cookies-from-browser", yt_cookies]
+        cmd += [
             "--write-sub", "--skip-download",
             "--sub-lang", "en", "--convert-subs", "srt",
             "-o", base_output,
@@ -82,8 +84,10 @@ def download_srt(url: str, debug: bool = False, backend: str = 'default', model:
         if not found:
             if debug:
                 print("____ There aren't any subtitles to convert", file=sys.stderr)
-            cmd_auto = [
-                "yt-dlp", "-q", "--no-warnings",
+            cmd_auto = ["yt-dlp", "-q", "--no-warnings", "--no-continue"]
+            if yt_cookies:
+                cmd_auto += ["--cookies-from-browser", yt_cookies]
+            cmd_auto += [
                 "--write-auto-sub", "--skip-download",
                 "--sub-lang", "en", "--convert-subs", "srt",
                 "-o", base_output,

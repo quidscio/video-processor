@@ -200,6 +200,11 @@ class VersionedHelpCommand(click.Command):
     help="One-off override for Ollama server host (overrides config file and env)."
 )
 @click.option(
+    "--yt-cookies",
+    default="chrome", metavar="BROWSER", show_default=True, hidden=True,
+    help="Browser to pull cookies from for yt-dlp (default: chrome). Pass empty string to disable."
+)
+@click.option(
     "--init-config",
     is_flag=True,
     help="Bootstrap project-local config.toml (copy template if missing) and symlink it into XDG config area, then exit."
@@ -228,6 +233,7 @@ def main(
     token_limit: int,
     backend: str,
     ollama_host: str,
+    yt_cookies: str,
     init_config: bool,
     symlink_cli: bool,
     transcript: bool,
@@ -348,13 +354,12 @@ def main(
             if not debug:
                 cmd_vid += ["-q", "--no-warnings"]
             # Select best single file format (highest resolution) - use "b" to suppress warning
-            cmd_vid += ["--no-mtime", "-f", "b", "-o", out_template, source]
+            cmd_vid += ["--no-mtime", "--no-continue", "-f", "b"]
+            if yt_cookies:
+                cmd_vid += ["--cookies-from-browser", yt_cookies]
+            cmd_vid += ["-o", out_template, source]
             if debug:
-                # Show what template will be used 
-                if title:
-                    click.echo(f"__ Running video download with title '{title}': yt-dlp --no-mtime -f b -o {out_template} {source}", err=True)
-                else:
-                    click.echo(f"__ Running video download (title extraction failed): yt-dlp --no-mtime -f b -o {out_template} {source}", err=True)
+                click.echo(f"__ Running video download: {' '.join(cmd_vid)}", err=True)
             try:
                 subprocess.run(cmd_vid, check=True)
                 if title:
@@ -378,7 +383,7 @@ def main(
                 raise click.ClickException(f"Error downloading video: {e}")
         from .downloader import download_srt
         try:
-            srt_text = download_srt(source, debug=debug, backend=backend_used, model=llm_model)
+            srt_text = download_srt(source, debug=debug, backend=backend_used, model=llm_model, yt_cookies=yt_cookies)
         except RuntimeError as err:
             if not download_video or not downloaded_video_file:
                 raise click.ClickException(str(err))

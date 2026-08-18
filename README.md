@@ -45,6 +45,30 @@ If you are not publishing to PyPI, you do not need `python -m build` or `twine`.
   python -m pip install --upgrade yt-dlp
   ```
 
+- **Google Chrome sign-in (required for large YouTube videos)**:
+  YouTube enforces an authenticated download limit of roughly 30 MB for unauthenticated requests.
+  Chrome must be installed and signed in to a Google account **in the same environment where
+  `video-processor` runs** (i.e. WSL, not Windows Chrome).
+
+  Install Chrome on Debian/WSL if not present:
+  ```bash
+  curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg
+  echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+  sudo apt update && sudo apt install -y google-chrome-stable
+  ```
+
+  Launch Chrome (WSLg handles the display on Windows 11) and sign in to YouTube:
+  ```bash
+  google-chrome-stable --window-size=1280,900 &
+  ```
+
+  Once signed in, `video-processor` will use Chrome cookies automatically — no extra flags needed:
+  ```bash
+  video-processor -y https://youtu.be/VIDEO_ID
+  ```
+
+  If you use Firefox instead, override with `--yt-cookies firefox`.
+
 - **JavaScript runtime for yt-dlp** (required for YouTube since yt-dlp ~2026.3):
   yt-dlp needs a JS runtime to solve YouTube's n-challenges. Install **Deno** (the default):
   ```bash
