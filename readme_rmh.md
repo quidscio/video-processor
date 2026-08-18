@@ -276,36 +276,4 @@ From this table and experience, perform a close analysis of:
 
 # Issues and TODO Items 
 
-## Update LLM
-
-From gpt 5.4 to 5.6. 
-
-## Error downloading
-
-At this time, appears on two videos: 
-
-```bash
-|32) > video-processor -l gpt-5.4 -d -y https://www.youtube.com/watch?v=3Eu2zLfF--w
-== Video Processor 1.6.1 20260817-172025 ==
-.. Executing /home/user/bin/video-processor -l gpt-5.4 -d -y https://www.youtube.com/watch?v=3Eu2zLfF--w
-.. Seeking subtitles for https://www.youtube.com/watch?v=3Eu2zLfF--w
-.. Downloading full video for https://www.youtube.com/watch?v=3Eu2zLfF--w
-ERROR: unable to download video data: HTTP Error 403: Forbidden
-Error: Error downloading video: Command '['yt-dlp', '-q', '--no-warnings', '--no-mtime', '-f', 'b', '-o', 'How-to-Get-Rid-of-Spurge-Weed-(and-Prevent-It-Forever)_openai_gpt-5.4_20260817-172025.%(ext)s', 'https://www.youtube.com/watch?v=3Eu2zLfF--w']' returned non-zero exit status 1.
-|1:user@rmhlap-wsl2)-(17:20:33.17)|RTX 4090 16GB
-/mnt/c/Users/rmhin/Downloads
-|33) >
-
-|0:user@rmhlap-wsl2)-(17:22:21.17)|RTX 4090 16GB
-/mnt/c/Users/rmhin/Downloads
-|34) > video-processor -l gpt-5.4 -d -y https://youtu.be/eYUYdpG4UT8?is=k9kv-8jAzTdujVQs
-== Video Processor 1.6.1 20260817-204506 ==
-.. Executing /home/user/bin/video-processor -l gpt-5.4 -d -y https://youtu.be/eYUYdpG4UT8?is=k9kv-8jAzTdujVQs
-.. Seeking subtitles for https://youtu.be/eYUYdpG4UT8?is=k9kv-8jAzTdujVQs
-.. Downloading full video for https://youtu.be/eYUYdpG4UT8?is=k9kv-8jAzTdujVQs
-ERROR: unable to download video data: HTTP Error 403: Forbidden
-Error: Error downloading video: Command '['yt-dlp', '-q', '--no-warnings', '--no-mtime', '-f', 'b', '-o', 'The-Rise-and-Reckoning-of-AI-2026-Isaac-Asimov-Memorial-Debate_openai_gpt-5.4_20260817-204506.%(ext)s', 'https://youtu.be/eYUYdpG4UT8?is=k9kv-8jAzTdujVQs']' returned non-zero exit status 1.
-|1:user@rmhlap-wsl2)-(20:45:11.17)|RTX 4090 16GB
-/mnt/c/Users/rmhin/Downloads
-|35) >
-```
+NONE
